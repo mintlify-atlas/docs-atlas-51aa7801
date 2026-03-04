@@ -1,0 +1,320 @@
+---
+title: 'Market Data'
+description: 'REST API for market data and historical trades'
+---
+
+## Get Market Data
+
+Retrieve current market data for a specific instrument, including bids, offers, last price, and more.
+
+```csharp
+public async Task<MarketDataRestApi> GetMarketData(
+    Instrument instrument, 
+    short depth = 5, 
+    Entry[] entries = null
+)
+```
+
+```csharp
+public async Task<MarketDataRestApi> GetMarketData(
+    string marketId, 
+    string symbol, 
+    short depth = 5, 
+    Entry[] entries = null
+)
+```
+
+### Parameters
+
+<ParamField path="instrument" type="Instrument" required>
+  The instrument to get market data for
+</ParamField>
+
+<ParamField path="marketId" type="string" required>
+  Market identifier (e.g., "ROFX", "MERV")
+</ParamField>
+
+<ParamField path="symbol" type="string" required>
+  Instrument symbol/ticker
+</ParamField>
+
+<ParamField path="depth" type="short" default="5">
+  Order book depth (number of price levels)
+</ParamField>
+
+<ParamField path="entries" type="Entry[]" default="all entries">
+  Specific market data entries to retrieve. If `null`, all entries are returned.
+  
+  Available entries: `Bids`, `Offers`, `Last`, `Open`, `Close`, `SettlementPrice`, `SessionHighPrice`, `SessionLowPrice`, `Volume`, `OpenInterest`, `IndexValue`, `EffectiveVolume`, `NominalVolume`
+</ParamField>
+
+### Response
+
+<ResponseField name="Status" type="HttpStatusCode">
+  HTTP status code of the response
+</ResponseField>
+
+<ResponseField name="Aggregated" type="bool">
+  Whether data is aggregated
+</ResponseField>
+
+<ResponseField name="Data" type="Entries">
+  Market data entries object containing:
+  
+  <Expandable title="Data Fields">
+    <ResponseField name="Bids" type="Trade[]">
+      Best buy offers in the order book
+    </ResponseField>
+    
+    <ResponseField name="Offers" type="Trade[]">
+      Best sell offers in the order book
+    </ResponseField>
+    
+    <ResponseField name="Last" type="NullableTrade">
+      Last traded price and size
+    </ResponseField>
+    
+    <ResponseField name="Open" type="decimal?">
+      Opening price
+    </ResponseField>
+    
+    <ResponseField name="Close" type="NullableTrade">
+      Closing price
+    </ResponseField>
+    
+    <ResponseField name="SettlementPrice" type="NullableTrade">
+      Settlement price (futures only)
+    </ResponseField>
+    
+    <ResponseField name="OpenInterest" type="NullableTrade">
+      Open interest (futures only)
+    </ResponseField>
+    
+    <ResponseField name="SessionHighPrice" type="decimal?">
+      Highest price in session
+    </ResponseField>
+    
+    <ResponseField name="SessionLowPrice" type="decimal?">
+      Lowest price in session
+    </ResponseField>
+    
+    <ResponseField name="IndexValue" type="decimal?">
+      Index value (indices only)
+    </ResponseField>
+    
+    <ResponseField name="Volume" type="decimal?">
+      Total traded volume
+    </ResponseField>
+    
+    <ResponseField name="NominalVolume" type="decimal?">
+      Nominal traded volume
+    </ResponseField>
+    
+    <ResponseField name="EffectiveVolume" type="decimal?">
+      Effective traded volume
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```csharp
+using Primary;
+using Primary.Data;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get all instruments
+var instruments = await api.GetAllInstruments();
+var instrument = instruments.First();
+
+// Get market data with default depth (5)
+var marketData = await api.GetMarketData(instrument);
+
+// Access bid/offer data
+if (marketData.Data.HasBids())
+{
+    decimal topBidPrice = marketData.Data.GetTopBidPrice();
+    decimal topBidSize = marketData.Data.GetTopBidSize();
+    Console.WriteLine($"Top Bid: {topBidPrice} x {topBidSize}");
+}
+
+if (marketData.Data.HasOffers())
+{
+    decimal topOfferPrice = marketData.Data.GetTopOfferPrice();
+    decimal topOfferSize = marketData.Data.GetTopOfferSize();
+    Console.WriteLine($"Top Offer: {topOfferPrice} x {topOfferSize}");
+}
+
+// Access last traded price
+if (marketData.Data.HasLastPrice())
+{
+    Console.WriteLine($"Last: {marketData.Data.Last.Price}");
+}
+```
+
+### Get Specific Entries
+
+```csharp
+// Only get last price and volume
+var entries = new[] { Entry.Last, Entry.Volume };
+var marketData = await api.GetMarketData(instrument, depth: 1, entries: entries);
+
+Console.WriteLine($"Last Price: {marketData.Data.Last?.Price}");
+Console.WriteLine($"Volume: {marketData.Data.Volume}");
+```
+
+### Deep Order Book
+
+```csharp
+// Get 10 levels of depth
+var marketData = await api.GetMarketData(instrument, depth: 10);
+
+// Display all bid levels
+foreach (var bid in marketData.Data.Bids)
+{
+    Console.WriteLine($"Bid: {bid.Price} x {bid.Size}");
+}
+
+// Display all offer levels
+foreach (var offer in marketData.Data.Offers)
+{
+    Console.WriteLine($"Offer: {offer.Price} x {offer.Size}");
+}
+```
+
+## Get Historical Trades
+
+Retrieve historical trade data for a specific instrument and date range.
+
+```csharp
+public async Task<IEnumerable<Trade>> GetHistoricalTrades(
+    Instrument instrument,
+    DateTime dateFrom,
+    DateTime dateTo
+)
+```
+
+### Parameters
+
+<ParamField path="instrument" type="Instrument" required>
+  Instrument to get trade history for
+</ParamField>
+
+<ParamField path="dateFrom" type="DateTime" required>
+  Start date for historical data (format: yyyy-MM-dd)
+</ParamField>
+
+<ParamField path="dateTo" type="DateTime" required>
+  End date for historical data (format: yyyy-MM-dd)
+</ParamField>
+
+### Response
+
+Returns an `IEnumerable<Trade>` where each `Trade` contains:
+
+<ResponseField name="Price" type="decimal">
+  Trade price
+</ResponseField>
+
+<ResponseField name="Size" type="decimal">
+  Trade size/quantity
+</ResponseField>
+
+<ResponseField name="DateTime" type="DateTime">
+  Trade timestamp
+</ResponseField>
+
+<ResponseField name="ServerTime" type="long">
+  Server timestamp in Unix epoch format
+</ResponseField>
+
+### Example
+
+```csharp
+var instrument = new Instrument
+{
+    Market = "MERV",
+    Symbol = "MERV - XMEV - GGAL - 48hs"
+};
+
+var dateFrom = new DateTime(2024, 1, 1);
+var dateTo = new DateTime(2024, 1, 31);
+
+try
+{
+    var trades = await api.GetHistoricalTrades(instrument, dateFrom, dateTo);
+    
+    foreach (var trade in trades)
+    {
+        Console.WriteLine($"{trade.DateTime}: {trade.Size} @ {trade.Price}");
+    }
+    
+    // Calculate statistics
+    decimal avgPrice = trades.Average(t => t.Price);
+    decimal totalVolume = trades.Sum(t => t.Size);
+    
+    Console.WriteLine($"Average Price: {avgPrice}");
+    Console.WriteLine($"Total Volume: {totalVolume}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error: {ex.Message}");
+}
+```
+
+### Notes
+
+<Note>
+  The historical trades endpoint internally uses `marketId = "MERV"` and `external = 1` parameters for data retrieval.
+</Note>
+
+<Warning>
+  Large date ranges may return significant amounts of data. Consider paginating or limiting your date range for better performance.
+</Warning>
+
+## Market Data Entries
+
+The `Entry` enum defines all available market data types:
+
+| Entry | Description |
+|-------|-------------|
+| `Bids` | Best buy offers in the Market Book |
+| `Offers` | Best sell offers in the Market Book |
+| `Last` | Last price traded in the Market Book |
+| `Open` | Opening price in the Market Book |
+| `Close` | Closing price in the Market Book |
+| `SettlementPrice` | Settlement price (only for futures) |
+| `SessionHighPrice` | Highest price traded |
+| `SessionLowPrice` | Lowest price traded |
+| `Volume` | Traded volume in contracts/nominal |
+| `OpenInterest` | Open interest in contracts (only for futures) |
+| `IndexValue` | Calculated index value (only for indices) |
+| `EffectiveVolume` | Effective traded volume |
+| `NominalVolume` | Nominal traded volume |
+
+## Helper Methods
+
+The `Entries` class provides convenient helper methods:
+
+```csharp
+// Check if data is available
+bool hasBids = marketData.Data.HasBids();
+bool hasOffers = marketData.Data.HasOffers();
+bool hasLastPrice = marketData.Data.HasLastPrice();
+
+// Get top of book
+decimal topBidPrice = marketData.Data.GetTopBidPrice();
+decimal topBidSize = marketData.Data.GetTopBidSize();
+decimal topOfferPrice = marketData.Data.GetTopOfferPrice();
+decimal topOfferSize = marketData.Data.GetTopOfferSize();
+```
+
+## API Endpoint
+
+The market data methods use the following REST endpoint:
+
+```
+GET {BaseUri}/rest/marketdata/get?symbol={symbol}&marketId={marketId}&entries={entries}&depth={depth}
+```

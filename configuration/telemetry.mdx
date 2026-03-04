@@ -1,0 +1,144 @@
+---
+title: 'Telemetry Configuration'
+description: 'Disable telemetry and analytics in ChuchoBot'
+icon: 'chart-mixed'
+---
+
+## Overview
+
+ChuchoBot includes telemetry to help improve the application. If you prefer to disable telemetry and prevent the application from sending analytics data, you can do so by modifying the configuration file.
+
+## Disabling Telemetry
+
+Telemetry is controlled by the Application Insights connection string in the configuration file.
+
+<Steps>
+  <Step title="Locate the configuration file">
+    Find `ChuchoBot.exe.config` in your ChuchoBot installation directory.
+  </Step>
+  
+  <Step title="Open in text editor">
+    Open the file with a text editor like Notepad, Notepad++, or VS Code.
+  </Step>
+  
+  <Step title="Find connectionStrings section">
+    Locate the `<connectionStrings>` section at the top of the file:
+    
+    ```xml
+    <connectionStrings>
+      <add name="Primary.WinFormsApp.Properties.Settings.AppInsightsConnectionString"
+        connectionString="InstrumentationKey=...;IngestionEndpoint=..." />
+    </connectionStrings>
+    ```
+  </Step>
+  
+  <Step title="Remove the section">
+    Delete the entire `<connectionStrings>...</connectionStrings>` section.
+  </Step>
+  
+  <Step title="Save and restart">
+    Save the file and restart ChuchoBot.
+  </Step>
+</Steps>
+
+## Before Disabling Telemetry
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <configSections>
+    <!-- ... -->
+  </configSections>
+  
+  <connectionStrings>
+    <add name="Primary.WinFormsApp.Properties.Settings.AppInsightsConnectionString"
+      connectionString="InstrumentationKey=fad780b5-9d86-41bf-9b39-8a0cbe73b9f7;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/" />
+  </connectionStrings>
+  
+  <userSettings>
+    <!-- ... -->
+  </userSettings>
+</configuration>
+```
+
+## After Disabling Telemetry
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <configSections>
+    <!-- ... -->
+  </configSections>
+  
+  <!-- connectionStrings section removed -->
+  
+  <userSettings>
+    <!-- ... -->
+  </userSettings>
+</configuration>
+```
+
+<Note>
+  ChuchoBot will function normally without the connection string. No telemetry data will be sent.
+</Note>
+
+## What Data Does Telemetry Collect?
+
+When enabled, ChuchoBot uses Azure Application Insights to collect:
+
+- Application usage statistics
+- Error and crash reports
+- Performance metrics
+- Anonymous usage patterns
+
+<Accordion title="Privacy Information">
+  Telemetry helps the developer:
+  - Identify and fix bugs
+  - Understand feature usage
+  - Improve performance
+  - Prioritize development efforts
+  
+  **No personal trading data, credentials, or financial information is collected.**
+</Accordion>
+
+## Verifying Telemetry is Disabled
+
+After removing the connection string and restarting ChuchoBot:
+
+1. The application should start normally
+2. All features work as expected
+3. No telemetry data is sent to Application Insights
+
+<Warning>
+  Make sure to save the file before restarting ChuchoBot. If the file has syntax errors, ChuchoBot may fail to start.
+</Warning>
+
+## Re-enabling Telemetry
+
+If you want to re-enable telemetry later, you can restore the connection string:
+
+```xml
+<connectionStrings>
+  <add name="Primary.WinFormsApp.Properties.Settings.AppInsightsConnectionString"
+    connectionString="InstrumentationKey=fad780b5-9d86-41bf-9b39-8a0cbe73b9f7;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/" />
+</connectionStrings>
+```
+
+Place this section after `<configSections>` and before `<userSettings>` in the config file.
+
+## Alternative: Keep Section but Clear Value
+
+You can also keep the structure but clear the connection string value:
+
+```xml
+<connectionStrings>
+  <add name="Primary.WinFormsApp.Properties.Settings.AppInsightsConnectionString"
+    connectionString="" />
+</connectionStrings>
+```
+
+This achieves the same result (disabling telemetry) while maintaining the configuration structure.
+
+<Note>
+  Both methods (removing the section or clearing the value) effectively disable telemetry.
+</Note>

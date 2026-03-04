@@ -1,0 +1,139 @@
+---
+title: 'Primary SDK Overview'
+description: 'Complete reference for the ChuchoBot Primary API C# SDK'
+---
+
+## Introduction
+
+The Primary SDK is a C# library that provides programmatic access to the Primary exchange market data and trading API. It enables you to authenticate, retrieve market data, manage orders, and receive real-time updates via WebSockets.
+
+## Installation
+
+Add the Primary SDK to your C# project:
+
+```csharp
+using Primary;
+using Primary.Data;
+using Primary.Data.Orders;
+using Primary.WebSockets;
+```
+
+## Initialize the API
+
+Create an API instance by specifying the endpoint:
+
+```csharp
+// Production endpoint
+var api = new Api(Api.ProductionEndpoint);
+
+// Demo endpoint
+var api = new Api(Api.DemoEndpoint);
+```
+
+### Available Endpoints
+
+<ParamField path="ProductionEndpoint" type="Uri">
+  Production API endpoint: `https://api.primary.com.ar`
+</ParamField>
+
+<ParamField path="DemoEndpoint" type="Uri">
+  Demo API endpoint: `https://api.remarkets.primary.com.ar`
+  
+  Get demo credentials at [https://remarkets.primary.ventures](https://remarkets.primary.ventures)
+</ParamField>
+
+## Quick Start Example
+
+Here's a complete example to authenticate and get market data:
+
+```csharp
+using Primary;
+using Primary.Data;
+
+// Initialize API with demo endpoint
+var api = new Api(Api.DemoEndpoint);
+
+// Authenticate
+bool success = await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+if (success)
+{
+    // Get all instruments
+    var instruments = await api.GetAllInstruments();
+    
+    // Get market data for a specific instrument
+    var instrument = instruments.First();
+    var marketData = await api.GetMarketData(instrument);
+    
+    Console.WriteLine($"Last price: {marketData.Data.Last?.Price}");
+}
+```
+
+## API Categories
+
+The Primary SDK is organized into the following categories:
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    Login and manage authentication tokens
+  </Card>
+  
+  <Card title="Market Data" icon="chart-line" href="/api/market-data">
+    REST API for market data and historical trades
+  </Card>
+  
+  <Card title="Instruments" icon="list" href="/api/instruments">
+    Get instrument details and listings
+  </Card>
+  
+  <Card title="Orders" icon="receipt" href="/api/orders">
+    Submit, cancel, and query orders
+  </Card>
+  
+  <Card title="Positions" icon="wallet" href="/api/positions">
+    Get account positions and balances
+  </Card>
+  
+  <Card title="WebSockets" icon="plug" href="/api/websockets">
+    Real-time market and order data streams
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+The SDK throws exceptions when API calls fail:
+
+```csharp
+try
+{
+    var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"Order failed: {ex.Message}");
+}
+```
+
+Errors include the status, message, and description from the API response.
+
+## Base URI and HTTP Client
+
+The API class exposes the following properties:
+
+<ResponseField name="BaseUri" type="Uri">
+  The base URI for all API requests
+</ResponseField>
+
+<ResponseField name="HttpClient" type="HttpClient">
+  The underlying HTTP client (default timeout: 5 minutes)
+</ResponseField>
+
+## Demo Credentials
+
+For testing, use these built-in demo credentials:
+
+```csharp
+Api.DemoUsername // "naicigam2046"
+Api.DemoPassword // "nczhmL9@"
+Api.DemoAccount  // "REM2046"
+```

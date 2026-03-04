@@ -1,0 +1,331 @@
+---
+title: 'Dollar MEP & CCL Calculator'
+description: 'Real-time scanner to find the best instruments for buying or selling dollar MEP and CCL'
+icon: 'dollar-sign'
+---
+
+## Overview
+
+The Dollar MEP/CCL Calculator provides real-time exchange rates across all available instruments, helping you identify the most favorable rates for buying or selling dollars through financial markets.
+
+<Info>
+**MEP vs CCL**: Dollar MEP (Mercado Electrónico de Pagos) uses local market instruments (D suffix), while Dollar CCL (Contado con Liquidación) uses foreign market instruments (C suffix) that can be sold abroad.
+</Info>
+
+## What is Dollar MEP and CCL?
+
+**Dollar MEP (Mercado Electrónico de Pagos)**
+- Buy bonds in pesos, sell them in dollar-denominated version
+- Settled domestically in Argentina
+- Typically has tighter spreads
+- Lower transaction costs
+
+**Dollar CCL (Contado con Liquidación)**
+- Buy bonds in pesos, sell them in foreign markets (NYSE, etc.)
+- Dollars can be transferred abroad
+- Usually trades at a premium to MEP
+- Subject to international settlement timing
+
+## Scanner Interface
+
+<Tabs>
+  <Tab title="Dollar MEP">
+    ![Dollar MEP Scanner](/screenshots/DolarMEP.png)
+    
+    Shows all instruments with their MEP exchange rates, sorted by best buy/sell prices.
+  </Tab>
+  <Tab title="Dollar CCL">
+    ![Dollar CCL Scanner](/screenshots/DolarCCL.png)
+    
+    Shows all instruments with their CCL exchange rates, including foreign-traded bonds.
+  </Tab>
+</Tabs>
+
+## How to Access
+
+Open the Dollar MEP/CCL scanners from the main menu:
+- **Dolar** → **MEP** (for Dollar MEP)
+- **Dolar** → **CCL** (for Dollar CCL)
+
+## Calculation Logic
+
+The exchange rate is calculated using real-time market data:
+
+### Buying Dollars (Pesos → Dollars)
+
+```csharp
+// Buy bond in pesos (at offer price), sell in dollars (at bid price)
+BuyPrice = Pesos.OfferPrice / Dolar.BidPrice
+
+// Example: AL30 at $55,000 pesos, AL30D at $1,000 USD
+// Dollar buy price = 55,000 / 1,000 = $55 pesos per dollar
+```
+
+### Selling Dollars (Dollars → Pesos)
+
+```csharp
+// Buy bond in dollars (at offer price), sell in pesos (at bid price)  
+SellPrice = Pesos.BidPrice / Dolar.OfferPrice
+
+// Example: AL30D at $1,000 USD, AL30 at $55,500 pesos
+// Dollar sell price = 55,500 / 1,000 = $55.50 pesos per dollar
+```
+
+### Last Price (Reference Only)
+
+```csharp
+// Using last traded prices (not executable)
+Last = Pesos.LastPrice / Dolar.LastPrice
+```
+
+<Warning>
+**Important**: Buy/Sell prices use bid/offer (executable prices), while Last uses historical traded prices for reference only.
+</Warning>
+
+## Scanner Columns
+
+| Column | Description |
+|--------|-------------|
+| **Instrument** | Bond or asset ticker (e.g., AL30, GD30, GGAL) |
+| **Trade** | Settlement terms (CI/CI, 24hs/24hs, etc.) |
+| **Last** | Reference exchange rate from last traded prices |
+| **Buy Price** | Exchange rate to BUY dollars (higher = worse) |
+| **Sell Price** | Exchange rate to SELL dollars (higher = better) |
+| **Spread** | Difference between buy and sell prices |
+
+## Operation Workflow
+
+### Buying Dollars (Pesos → USD)
+
+<Steps>
+  <Step title="Find Best Buy Rate">
+    Look for the instrument with the **lowest Buy Price** in the scanner
+  </Step>
+  <Step title="Execute First Leg">
+    Buy the bond in pesos at the offer price
+  </Step>
+  <Step title="Wait for Settlement">
+    Settlement timing depends on the term (CI = immediate, 24hs = next day)
+  </Step>
+  <Step title="Execute Second Leg">
+    Sell the dollar-denominated version at the bid price
+  </Step>
+  <Step title="Receive Dollars">
+    Dollars are credited to your account after settlement
+  </Step>
+</Steps>
+
+**Example - Buying $1,000 USD via MEP:**
+1. Scanner shows AL30 MEP buy price: $550 pesos/dollar
+2. Buy AL30 in pesos: 550 nominals × $1,000 = $550,000 pesos
+3. Wait for settlement (parking period required by regulation)
+4. Sell AL30D: 550 nominals × $1 = $1,000 USD
+5. Net cost: ~$550,000 pesos for $1,000 USD (plus fees)
+
+### Selling Dollars (USD → Pesos)
+
+<Steps>
+  <Step title="Find Best Sell Rate">
+    Look for the instrument with the **highest Sell Price** in the scanner
+  </Step>
+  <Step title="Execute First Leg">
+    Buy the dollar-denominated bond at the offer price
+  </Step>
+  <Step title="Wait for Settlement">
+    Observe the mandatory parking period
+  </Step>
+  <Step title="Execute Second Leg">
+    Sell the peso version at the bid price
+  </Step>
+  <Step title="Receive Pesos">
+    Pesos are credited after settlement
+  </Step>
+</Steps>
+
+<Note>
+**Parking Period**: Argentine regulations require a mandatory waiting period between legs of MEP/CCL operations (typically 1-2 business days). Check current CNV regulations.
+</Note>
+
+## Settlement Term Options
+
+The scanner shows different settlement combinations:
+
+<CardGroup cols={2}>
+  <Card title="CI / CI" icon="bolt">
+    Both legs settle immediately. Requires both instruments available in CI.
+  </Card>
+  <Card title="24hs / 24hs" icon="clock">
+    Both legs settle next business day. Most common for liquid bonds.
+  </Card>
+  <Card title="CI / 24hs" icon="shuffle">
+    Mixed settlement terms. Consider financing costs for the mismatch.
+  </Card>
+  <Card title="24hs / CI" icon="shuffle">
+    Reverse mixed settlement. May offer arbitrage opportunities.
+  </Card>
+</CardGroup>
+
+## Supported Instruments
+
+ChuchoBot monitors all configured instruments and automatically creates MEP/CCL pairs:
+
+### Automatic Ticker Convention
+
+```csharp
+// For most instruments:
+Pesos: AL30
+MEP (D): AL30D  
+CCL (C): AL30C
+
+// Exceptions (configured separately):
+Pesos: X20Y4
+MEP (D): XY4D
+CCL (C): XY4C
+```
+
+### Common Instruments for Dollar Operations
+
+- **Sovereign Bonds**: GD30, AL30, AE38, AL29
+- **Treasury Bills**: S31Y4, X20Y4
+- **Corporate Bonds**: Various PYME CNV bonds
+- **CEDEARs**: GGAL, YPF, BMA (less common for dollar ops)
+
+<Info>
+Liquid sovereign bonds like GD30 and AL30 typically offer the best spreads and deepest markets for dollar operations.
+</Info>
+
+## Configuring Instrument Exceptions
+
+Some instruments don't follow the standard ticker convention:
+
+1. Go to **Configuración** → **Excepciones de instrumentos $;D;C**
+2. Add exceptions in format: `{Ticker Pesos};{Ticker MEP};{Ticker CCL}`
+3. Example: `X20Y4;XY4D;XY4C`
+
+![Configuration](/screenshots/Configuracion.png)
+
+## Understanding Market Data
+
+The scanner uses real-time WebSocket data to calculate rates:
+
+```csharp
+public class BuySellTrade
+{
+    // Buy dollars: use offer price in pesos, bid price in dollars
+    public decimal BuyPrice => 
+        Buy.Data.Offers[0].Price / Sell.Data.Bids[0].Price;
+    
+    // Sell dollars: use bid price in pesos, offer price in dollars
+    public decimal SellPrice => 
+        Buy.Data.Bids[0].Price / Sell.Data.Offers[0].Price;
+    
+    // Reference rate from last trades
+    public decimal Last => 
+        Buy.Data.Last.Price / Sell.Data.Last.Price;
+}
+```
+
+<Warning>
+The scanner shows **theoretical rates** based on current bid/offer. Actual execution depends on order placement and market conditions.
+</Warning>
+
+## Fees and Costs
+
+Consider all transaction costs when calculating effective dollar rates:
+
+### Per-Transaction Fees
+- **Broker commission**: 0.10% - 0.60% per leg (2 legs total)
+- **Market rights**: 0.01% for bonds, 0.001% for treasury bills
+- **VAT**: 21% on commissions
+
+### Implicit Costs
+- **Bid/ask spread**: Difference between buy and sell prices
+- **Slippage**: Price movement during execution
+- **Parking period**: Opportunity cost of locked funds
+
+**Example Total Cost:**
+```
+Bond price: $550,000 pesos
+Commission: 0.10% × 2 legs = 0.20% = $1,100
+Market rights: 0.01% × 2 legs = $110  
+VAT on commissions: $1,100 × 21% = $231
+
+Total fees: ~$1,441 (0.26% of operation)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Choose Liquid Instruments">
+    Stick to high-volume bonds (GD30, AL30) for tighter spreads and better execution.
+  </Accordion>
+  <Accordion title="Compare Multiple Instruments">
+    The scanner shows all available rates. Small differences can be significant on large amounts.
+  </Accordion>
+  <Accordion title="Monitor CI Availability">
+    CI settlement offers speed but may have wider spreads or limited availability.
+  </Accordion>
+  <Accordion title="Consider Total Costs">
+    The scanner shows exchange rates, but factor in all commissions and fees for true cost.
+  </Accordion>
+  <Accordion title="Watch Market Hours">
+    Best liquidity and spreads typically occur mid-morning through early afternoon.
+  </Accordion>
+  <Accordion title="Respect Parking Period">
+    Violating the mandatory parking period can result in penalties from CNV.
+  </Accordion>
+</AccordionGroup>
+
+## MEP vs CCL: Which to Use?
+
+| Factor | Dollar MEP | Dollar CCL |
+|--------|------------|------------|
+| **Transfer abroad** | No | Yes |
+| **Typical rate** | Lower | Higher (premium) |
+| **Spreads** | Tighter | Wider |
+| **Liquidity** | Higher | Lower |
+| **Settlement** | Domestic | International |
+| **Best for** | Peso/dollar conversion | Moving money abroad |
+
+<Info>
+If you don't need to transfer dollars abroad, MEP typically offers better rates due to higher liquidity and lower spreads.
+</Info>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Why do some instruments show zero prices?">
+    The instrument may not be trading in that settlement term, or there's no current bid/offer. Check if the market is open.
+  </Accordion>
+  <Accordion title="Why is the spread so wide?">
+    Low liquidity instruments have wider spreads. Consider using more liquid bonds like GD30 or AL30.
+  </Accordion>
+  <Accordion title="Can I execute directly from the scanner?">
+    No, ChuchoBot is view-only. You must execute orders through your broker's platform (Matriz/Primary).
+  </Accordion>
+  <Accordion title="Why do MEP and CCL rates differ?">
+    CCL allows dollar transfer abroad, creating demand pressure and typically a higher rate.
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Settlement Arbitrage" icon="calendar-days" href="/features/settlement-arbitrage">
+    Arbitrage price differences between settlement terms
+  </Card>
+  <Card title="Bond Ratios" icon="chart-line" href="/features/bond-ratios">
+    Analyze relative value between different bonds
+  </Card>
+  <Card title="Market Data" icon="signal" href="/features/market-data">
+    Real-time WebSocket data powers all calculations
+  </Card>
+</CardGroup>
+
+## Technical Reference
+
+The Dollar MEP/CCL calculator is implemented in:
+- `DolarCalculatorProcessor.cs` - Main calculation engine
+- `DolarTradedInstrument.cs` - Instrument pair management
+- `BuySellTrade.cs` - Exchange rate calculation logic
+- `FrmDolarPrices.cs` - Scanner UI implementation

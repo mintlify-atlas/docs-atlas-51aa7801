@@ -1,0 +1,209 @@
+---
+title: 'Authentication'
+description: 'Login and manage authentication with the Primary API'
+---
+
+## Overview
+
+Authentication is required for most API operations. The Primary API uses token-based authentication via custom headers.
+
+## Login Method
+
+Authenticate with username and password to receive an access token.
+
+```csharp
+public async Task<bool> Login(string username, string password)
+```
+
+### Parameters
+
+<ParamField path="username" type="string" required>
+  User account for authentication
+</ParamField>
+
+<ParamField path="password" type="string" required>
+  Password for authentication
+</ParamField>
+
+### Returns
+
+<ResponseField name="result" type="bool">
+  Returns `true` if authentication was successful, `false` otherwise
+</ResponseField>
+
+### Example
+
+```csharp
+using Primary;
+
+var api = new Api(Api.DemoEndpoint);
+
+// Login with credentials
+bool success = await api.Login("username", "password");
+
+if (success)
+{
+    Console.WriteLine("Authentication successful!");
+    Console.WriteLine($"Access token: {api.AccessToken}");
+}
+else
+{
+    Console.WriteLine("Authentication failed");
+}
+```
+
+### How It Works
+
+The `Login` method:
+
+1. Sends a POST request to `auth/getToken`
+2. Includes credentials in custom headers (`X-Username`, `X-Password`)
+3. Receives the access token in the `X-Auth-Token` response header
+4. Automatically sets the token for all subsequent requests
+
+## Set Access Token
+
+Manually set an authentication token (useful for token refresh or session management).
+
+```csharp
+public void SetAccessToken(string token)
+```
+
+### Parameters
+
+<ParamField path="token" type="string" required>
+  The authentication token to use for API requests
+</ParamField>
+
+### Example
+
+```csharp
+// Set a previously obtained token
+api.SetAccessToken("your-saved-token-here");
+
+// Now you can make authenticated requests without logging in again
+var instruments = await api.GetAllInstruments();
+```
+
+## Access Token Property
+
+Retrieve the current authentication token.
+
+```csharp
+public string AccessToken { get; private set; }
+```
+
+### Example
+
+```csharp
+// After successful login
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Store the token for later use
+string token = api.AccessToken;
+Console.WriteLine($"Token: {token}");
+
+// Save to config, database, or secure storage
+SaveTokenToStorage(token);
+```
+
+## Demo Credentials
+
+For testing and development, the SDK includes built-in demo credentials:
+
+```csharp
+public const string DemoUsername = "naicigam2046";
+public const string DemoPassword = "nczhmL9@";
+public const string DemoAccount = "REM2046";
+```
+
+### Example with Demo Credentials
+
+```csharp
+var api = new Api(Api.DemoEndpoint);
+
+// Login with demo credentials
+bool success = await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+if (success)
+{
+    // Submit orders to demo account
+    var order = new Order
+    {
+        Instrument = instrument,
+        Side = Side.Buy,
+        Quantity = 100,
+        Price = 150.50m,
+        Type = Type.Limit,
+        Expiration = Expiration.Day
+    };
+    
+    var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+}
+```
+
+## Authentication Flow
+
+<Steps>
+  <Step title="Initialize API">
+    Create an `Api` instance with the desired endpoint (production or demo)
+    
+    ```csharp
+    var api = new Api(Api.DemoEndpoint);
+    ```
+  </Step>
+  
+  <Step title="Login">
+    Call the `Login` method with your credentials
+    
+    ```csharp
+    await api.Login(username, password);
+    ```
+  </Step>
+  
+  <Step title="Make API Calls">
+    All subsequent API calls will automatically include the authentication token
+    
+    ```csharp
+    var instruments = await api.GetAllInstruments();
+    var positions = await api.GetPositions(accountName);
+    ```
+  </Step>
+</Steps>
+
+## Endpoint Configuration
+
+<CodeGroup>
+```csharp Production
+var api = new Api(Api.ProductionEndpoint);
+// Uses: https://api.primary.com.ar
+```
+
+```csharp Demo
+var api = new Api(Api.DemoEndpoint);
+// Uses: https://api.remarkets.primary.com.ar
+```
+
+```csharp Custom Endpoint
+var customEndpoint = new Uri("https://custom.api.example.com");
+var api = new Api(customEndpoint);
+```
+</CodeGroup>
+
+## Security Best Practices
+
+<Warning>
+  Never hardcode production credentials in your source code. Use environment variables, secure configuration files, or credential managers.
+</Warning>
+
+```csharp
+// Good: Load from environment
+string username = Environment.GetEnvironmentVariable("PRIMARY_USERNAME");
+string password = Environment.GetEnvironmentVariable("PRIMARY_PASSWORD");
+
+await api.Login(username, password);
+```
+
+<Tip>
+  Store the access token securely after login to avoid repeated authentication calls. The token can be reused across application restarts.
+</Tip>

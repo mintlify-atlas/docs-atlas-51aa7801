@@ -1,0 +1,252 @@
+---
+title: 'Commission Configuration'
+description: 'Configure commissions and market rights for accurate P&L calculation'
+icon: 'percent'
+---
+
+## Overview
+
+ChuchoBot calculates profit and loss (P&L) for arbitrage opportunities based on configured commissions and market rights. Accurate configuration is essential for realistic P&L estimates.
+
+## Commission Types
+
+ChuchoBot handles three types of fees:
+
+1. **Trading Commission** - Broker commission per trade
+2. **Market Rights** - BYMA fees (varies by instrument type)
+3. **Caución Commissions** - Fees for borrowing/lending operations
+
+## Trading Commission
+
+The general trading commission can be configured in the Arbitrage Scanner window.
+
+<Steps>
+  <Step title="Open Arbitrage Scanner">
+    Launch the arbitrage scanner from the main menu.
+  </Step>
+  
+  <Step title="Locate Commission Field">
+    Find the commission percentage field (default: 0.10%)
+  </Step>
+  
+  <Step title="Enter Your Broker's Commission">
+    Update with the actual commission rate your broker charges.
+  </Step>
+</Steps>
+
+<Note>
+  The default commission is set to **0.10%** per operation. This may vary significantly depending on your broker and account type.
+</Note>
+
+## Market Rights (Derechos de Mercado)
+
+BYMA (Bolsas y Mercados Argentinos) charges different market rights depending on the instrument type. ChuchoBot automatically applies the correct rate based on the instrument.
+
+### Market Rights Rates
+
+<Accordion title="Stocks and CEDEARs - 0.08%">
+  Applied to instruments listed in the `AccionesCEDEARs` setting.
+  
+  **Examples:** AAPL, MSFT, GOOGL, GGAL, YPFD, MELI, etc.
+  
+  ```xml
+  <setting name="DerechoMercadoAccionCEDEAR" serializeAs="String">
+    <value>0.08</value>
+  </setting>
+  ```
+</Accordion>
+
+<Accordion title="Treasury Bills (Letras) - 0.001%">
+  Applied to instruments listed in the `Letras` setting.
+  
+  **Examples:** S01L4, S14J4, S26L4, S30G4, etc.
+  
+  ```xml
+  <setting name="DerechoMercadoLetra" serializeAs="String">
+    <value>0.001</value>
+  </setting>
+  ```
+</Accordion>
+
+<Accordion title="Bonds (Bonos) - 0.01%">
+  Applied to all other instruments not in the above categories.
+  
+  **Examples:** AL30, GD30, AL35, GD35, etc.
+  
+  ```xml
+  <setting name="DerechoMercado" serializeAs="String">
+    <value>0.01</value>
+  </setting>
+  ```
+</Accordion>
+
+### Configuring Market Rights
+
+Market rights are configured in the `ChuchoBot.exe.config` file:
+
+```xml
+<applicationSettings>
+  <Primary.WinFormsApp.Properties.Settings>
+    <!-- Bonds (default) -->
+    <setting name="DerechoMercado" serializeAs="String">
+      <value>0.01</value>
+    </setting>
+    
+    <!-- Stocks and CEDEARs -->
+    <setting name="DerechoMercadoAccionCEDEAR" serializeAs="String">
+      <value>0.08</value>
+    </setting>
+    
+    <!-- Treasury Bills -->
+    <setting name="DerechoMercadoLetra" serializeAs="String">
+      <value>0.001</value>
+    </setting>
+  </Primary.WinFormsApp.Properties.Settings>
+</applicationSettings>
+```
+
+<Note>
+  Official BYMA market rights documentation: [BYMA Market Rights PDF](https://www.byma.com.ar/wp-content/uploads/dlm_uploads/2019/11/BYMA-Derechos-Mercado-sobre-Operaciones-2022-12-01.pdf)
+</Note>
+
+## Caución Commissions
+
+Caución operations (repo/reverse repo) have specific commission rates that must be configured for accurate arbitrage calculations.
+
+### Configuration in Arbitrage Scanner
+
+These values are configured in the arbitrage scanner window:
+
+- **Comisión Tomadora (TNA)** - Annual rate for borrowing (taking) caución
+- **Comisión Colocadora (TNA)** - Annual rate for lending (placing) caución
+
+<Steps>
+  <Step title="Open Arbitrage Scanner">
+    Navigate to **Arbitrajes de Plazos** in the main menu.
+  </Step>
+  
+  <Step title="Locate Caución Fields">
+    Find the caución commission fields in the scanner window.
+  </Step>
+  
+  <Step title="Enter TNA Rates">
+    - **Comisión Tomadora (TNA):** Enter your broker's rate (default: 4%)
+    - **Comisión Colocadora (TNA):** Enter your broker's rate (default: 1.5%)
+  </Step>
+</Steps>
+
+### Default Caución Rates
+
+In the config file:
+
+```xml
+<userSettings>
+  <Primary.WinFormsApp.Properties.Settings>
+    <setting name="ArancelCaucionTomadora" serializeAs="String">
+      <value>4</value>
+    </setting>
+    <setting name="ArancelCaucionColocadora" serializeAs="String">
+      <value>1.5</value>
+    </setting>
+  </Primary.WinFormsApp.Properties.Settings>
+</userSettings>
+```
+
+<Warning>
+  The default caución commission values are **arbitrary**. You MUST configure these with your broker's actual rates for accurate P&L calculations.
+</Warning>
+
+## Per-Instrument Configuration
+
+Some instruments require special handling. ChuchoBot pre-configures hundreds of instruments in specific categories.
+
+### Adding Instruments to Categories
+
+<Accordion title="Adding to Stocks/CEDEARs (0.08% market rights)">
+  Edit the `AccionesCEDEARs` setting in `ChuchoBot.exe.config`:
+  
+  ```xml
+  <setting name="AccionesCEDEARs" serializeAs="Xml">
+    <value>
+      <ArrayOfString xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <string>AAPL</string>
+        <string>MSFT</string>
+        <!-- Add your instrument -->
+        <string>NEWINST</string>
+      </ArrayOfString>
+    </value>
+  </setting>
+  ```
+</Accordion>
+
+<Accordion title="Adding to Treasury Bills (0.001% market rights)">
+  Edit the `Letras` setting:
+  
+  ```xml
+  <setting name="Letras" serializeAs="Xml">
+    <value>
+      <ArrayOfString xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <string>S01L4</string>
+        <string>S30G4</string>
+        <!-- Add your letra -->
+      </ArrayOfString>
+    </value>
+  </setting>
+  ```
+</Accordion>
+
+## Verifying P&L Accuracy
+
+After configuring commissions:
+
+1. Open an arbitrage detail window (double-click any opportunity)
+2. Compare calculated P&L with your manual calculations
+3. Verify that all fees are being applied correctly
+4. Adjust commission rates if needed
+
+![Arbitrage Detail](/screenshots/ArbitrajePlazoDetail.png)
+
+## Complete Example Configuration
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <userSettings>
+    <Primary.WinFormsApp.Properties.Settings>
+      <!-- Trading Commission -->
+      <setting name="Comision" serializeAs="String">
+        <value>0.10</value>
+      </setting>
+      
+      <!-- Caución Commissions (TNA) -->
+      <setting name="ArancelCaucionTomadora" serializeAs="String">
+        <value>4</value>
+      </setting>
+      <setting name="ArancelCaucionColocadora" serializeAs="String">
+        <value>1.5</value>
+      </setting>
+    </Primary.WinFormsApp.Properties.Settings>
+  </userSettings>
+  
+  <applicationSettings>
+    <Primary.WinFormsApp.Properties.Settings>
+      <!-- Market Rights -->
+      <setting name="DerechoMercado" serializeAs="String">
+        <value>0.01</value>
+      </setting>
+      <setting name="DerechoMercadoAccionCEDEAR" serializeAs="String">
+        <value>0.08</value>
+      </setting>
+      <setting name="DerechoMercadoLetra" serializeAs="String">
+        <value>0.001</value>
+      </setting>
+    </Primary.WinFormsApp.Properties.Settings>
+  </applicationSettings>
+</configuration>
+```
+
+<Warning>
+  Always restart ChuchoBot after modifying the config file for changes to take effect.
+</Warning>

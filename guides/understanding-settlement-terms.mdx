@@ -1,0 +1,263 @@
+---
+title: 'Understanding Settlement Terms'
+description: 'Learn about CI, 24hs, and 48hs settlement periods and how they affect your trading'
+icon: 'calendar-days'
+---
+
+## What are Settlement Terms?
+
+Settlement terms define when the exchange of securities and cash occurs after a trade is executed. The Argentine market offers three main settlement periods:
+
+- **CI (Contado Inmediato):** Immediate settlement
+- **24hs:** Settlement in 24 hours
+- **48hs:** Settlement in 48 hours
+
+Understanding these terms is crucial for effective arbitrage and portfolio management.
+
+## Settlement Term Details
+
+### CI - Contado Inmediato (Immediate Settlement)
+
+<Accordion title="How CI Settlement Works">
+  **Settlement timing:** Same trading day
+  
+  When you execute a trade in CI:
+  - **Buy operation:** Cash is debited immediately and securities are credited to your account
+  - **Sell operation:** Securities are debited immediately and cash is credited to your account
+  
+  **Key characteristics:**
+  - Requires immediate availability of cash (for buys) or securities (for sells)
+  - No financing period
+  - Ideal for same-day liquidity needs
+  - Often used as the "spot" reference price
+</Accordion>
+
+### 24hs Settlement
+
+<Accordion title="How 24hs Settlement Works">
+  **Settlement timing:** One business day after trade execution
+  
+  When you execute a trade in 24hs:
+  - **Buy operation:** You have until T+1 to have the cash available
+  - **Sell operation:** You receive the cash on T+1
+  
+  **Key characteristics:**
+  - Most common settlement term in the Argentine market
+  - Provides one day of "financing"
+  - Allows time to arrange funds or securities
+  - Often offers different pricing than CI due to implicit financing cost
+</Accordion>
+
+### 48hs Settlement
+
+<Accordion title="How 48hs Settlement Works">
+  **Settlement timing:** Two business days after trade execution
+  
+  When you execute a trade in 48hs:
+  - **Buy operation:** You have until T+2 to have the cash available
+  - **Sell operation:** You receive the cash on T+2
+  
+  **Key characteristics:**
+  - Longest standard settlement period
+  - Provides maximum financing flexibility
+  - Price differences from CI/24hs can be more pronounced
+  - Less liquid than CI and 24hs for many instruments
+</Accordion>
+
+## Why Do Prices Differ Across Settlement Terms?
+
+The same asset can trade at different prices across settlement terms due to:
+
+### 1. Implicit Financing Cost
+
+Longer settlement terms provide implicit financing. The price difference reflects:
+- Time value of money
+- Interest rate environment
+- Repo (cauciones) rates
+
+**Example:**
+- NVDA CI: $50,000
+- NVDA 24hs: $49,800
+- The $200 difference represents the implicit 1-day financing cost
+
+### 2. Supply and Demand Imbalances
+
+Different market participants have varying needs:
+- Some need immediate liquidity (prefer CI)
+- Others seek financing (prefer 24hs/48hs)
+- This creates temporary price dislocations
+
+### 3. Market Efficiency Gaps
+
+Arbitrage opportunities exist when:
+- Price differences exceed the actual cost of financing
+- Market participants aren't actively arbitraging
+- Temporary liquidity constraints in one settlement term
+
+<Note>
+ChuchoBot's arbitrage scanner identifies these efficiency gaps in real-time, showing you when the price difference exceeds the cost of executing the arbitrage.
+</Note>
+
+## Practical Trading Scenarios
+
+### Scenario 1: You Need Cash Today
+
+**Situation:** You own 100 shares of GGAL and need cash immediately
+
+**Solution:** Sell in CI settlement
+- Immediate cash receipt
+- Can place proceeds in cauciones if not needed immediately
+- Avoid waiting 24 or 48 hours for settlement
+
+### Scenario 2: You Want to Buy But Don't Have Cash Today
+
+**Situation:** You want to buy 100 shares of YPF but cash arrives tomorrow
+
+**Solution:** Buy in 24hs settlement
+- Execute the trade today at today's price
+- Cash payment deferred until tomorrow
+- Avoid missing the entry price while waiting for funds
+
+### Scenario 3: Arbitrage Opportunity Detected
+
+**Situation:** ChuchoBot shows NVDA CI selling higher than NVDA 24hs
+
+**Solution:** Execute arbitrage strategy
+1. Sell NVDA in CI (receive cash today)
+2. Buy NVDA in 24hs (pay tomorrow)
+3. Place CI proceeds in cauciones
+4. Capture the spread plus repo interest
+
+## Settlement Terms and Cauciones
+
+Cauciones (repos) are essential for settlement arbitrage:
+
+### Cauciones Colocadora (Lending Cash)
+
+<Accordion title="When to Use Cauciones Colocadora">
+  **Use when:** You have excess cash from a CI sale and the buy settlement is later
+  
+  **Benefits:**
+  - Earn interest on idle cash
+  - Enhances arbitrage profitability
+  - Risk-free return while waiting for buy settlement
+  
+  **Configuration in ChuchoBot:**
+  - Set "Comisión Colocadora (TNA)" in the arbitrage scanner
+  - This affects P&L calculations
+</Accordion>
+
+### Cauciones Tomadora (Borrowing Cash)
+
+<Accordion title="When to Use Cauciones Tomadora">
+  **Use when:** You buy in CI but sell in a later settlement term
+  
+  **Benefits:**
+  - Enables arbitrage without upfront capital
+  - Bridges the cash flow timing gap
+  - Cost is offset by the arbitrage spread
+  
+  **Configuration in ChuchoBot:**
+  - Set "Comisión Tomadora (TNA)" in the arbitrage scanner
+  - Higher borrowing costs reduce net arbitrage profit
+  
+  **Important:** Ensure you have borrowing capacity with your broker
+</Accordion>
+
+## Market Hours and Settlement Terms
+
+ChuchoBot tracks different market hours:
+
+### General Market Hours
+
+- **Opening:** 10:30 AM (default)
+- **Close without auction:** 17:00 PM (default)
+- **Close with auction:** 16:57 PM (default)
+
+### CI Market Hours
+
+- **Opening:** 10:30 AM (default)
+- **Close without auction:** 17:00 PM (default)
+- **Close with auction:** 16:57 PM (default)
+
+<Tip>
+These times are configurable in `ChuchoBot.exe.config` if your market operates on different hours.
+</Tip>
+
+<Warning>
+ChuchoBot shows a red WiFi icon "DISCONNECTED" outside market hours. This is normal behavior - reconnect when the market reopens.
+</Warning>
+
+## Settlement Terms in Scanner Display
+
+ChuchoBot's arbitrage scanner displays settlement terms clearly:
+
+**Format:** `1 Sell INSTRUMENT - TERM` / `2 Buy INSTRUMENT - TERM`
+
+**Examples:**
+- `1 Sell NVDA - CI` / `2 Buy NVDA - 24hs` (you need to own NVDA)
+- `1 Sell SPY - 24hs` / `2 Buy SPY - CI` (you need cash or borrowing capacity)
+
+**Reading the Display:**
+- **Left side (1 Sell):** The first operation you execute
+- **Right side (2 Buy):** The second operation you execute
+- **Settlement term order:** Determines which strategy type to use
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Know Your Liquidity Needs" icon="droplet">
+    Choose CI when you need immediate settlement, 24hs/48hs when you can wait.
+  </Card>
+  
+  <Card title="Monitor Spreads" icon="chart-line">
+    Use ChuchoBot to track when settlement term spreads become unusually wide.
+  </Card>
+  
+  <Card title="Calculate Total Costs" icon="calculator">
+    Factor in commissions, market fees, and repo rates when comparing terms.
+  </Card>
+  
+  <Card title="Understand Your Broker's Rules" icon="book">
+    Some brokers may have specific requirements for different settlement terms.
+  </Card>
+</CardGroup>
+
+## Common Questions
+
+<Accordion title="Can I trade all instruments in all settlement terms?">
+  Most instruments are available in CI and 24hs. Not all instruments trade in 48hs. Check ChuchoBot's real-time data for availability.
+</Accordion>
+
+<Accordion title="What happens if I don't have cash/securities at settlement?">
+  Your broker will typically:
+  - For buy: Automatically arrange financing (with associated costs)
+  - For sell: You cannot execute without securities unless using short-selling (if available)
+  
+  Always ensure you have sufficient cash or securities for settlement.
+</Accordion>
+
+<Accordion title="Can settlement dates fall on weekends or holidays?">
+  Settlement dates are business days only. If T+1 or T+2 falls on a weekend or holiday, settlement moves to the next business day.
+</Accordion>
+
+<Accordion title="Why does ChuchoBot sometimes show negative P&L for settlement arbitrage?">
+  When the price spread is smaller than the total cost of:
+  - Trading commissions (buy + sell)
+  - Market fees
+  - Repo borrowing/lending rates
+  
+  The arbitrage is not profitable. ChuchoBot's scanner helps you identify only positive opportunities when you enable the profit filter.
+</Accordion>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Arbitrage Strategies" icon="arrows-repeat" href="/guides/arbitrage-strategies">
+    Learn how to execute profitable arbitrage trades
+  </Card>
+  
+  <Card title="Asset Rotation" icon="arrows-rotate" href="/guides/asset-rotation">
+    Explore ratio-based trading strategies
+  </Card>
+</CardGroup>

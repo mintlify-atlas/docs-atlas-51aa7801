@@ -1,0 +1,304 @@
+---
+title: 'Instruments'
+description: 'Get instrument listings and details from the Primary exchange'
+---
+
+## Get All Instruments
+
+Retrieve a list of all instruments currently traded on the exchange.
+
+```csharp
+public async Task<IEnumerable<Instrument>> GetAllInstruments()
+```
+
+### Response
+
+Returns `IEnumerable<Instrument>` where each `Instrument` contains:
+
+<ResponseField name="Market" type="string">
+  Market identifier where the instrument is traded (e.g., "ROFX", "MERV")
+</ResponseField>
+
+<ResponseField name="Symbol" type="string">
+  Full instrument symbol/ticker
+</ResponseField>
+
+### Example
+
+```csharp
+using Primary;
+using Primary.Data;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get all instruments
+var instruments = await api.GetAllInstruments();
+
+foreach (var instrument in instruments)
+{
+    Console.WriteLine($"{instrument.Market}:{instrument.Symbol}");
+}
+
+// Filter by market
+var rofxInstruments = instruments.Where(i => i.Market == "ROFX");
+var mervInstruments = instruments.Where(i => i.Market == "MERV");
+```
+
+### API Endpoint
+
+```
+GET {BaseUri}/rest/instruments/all
+```
+
+## Get All Instruments With Details
+
+Retrieve detailed information about all instruments, including trading parameters and specifications.
+
+```csharp
+public async Task<IEnumerable<InstrumentDetail>> GetAllInstrumentsWithDetails()
+```
+
+### Response
+
+Returns `IEnumerable<InstrumentDetail>` where each `InstrumentDetail` contains:
+
+<ResponseField name="InstrumentId" type="Instrument">
+  The instrument identifier (Market and Symbol)
+</ResponseField>
+
+<ResponseField name="Segment" type="Segment">
+  Market segment information:
+  - `MarketSegmentId`: Segment identifier
+  - `MarketId`: Market identifier
+</ResponseField>
+
+<ResponseField name="LowLimitPrice" type="decimal">
+  Lower price limit for the instrument
+</ResponseField>
+
+<ResponseField name="HighLimitPrice" type="decimal">
+  Upper price limit for the instrument
+</ResponseField>
+
+<ResponseField name="MinPriceIncrement" type="decimal">
+  Minimum price increment (tick size)
+</ResponseField>
+
+<ResponseField name="MinTradevol" type="decimal">
+  Minimum trade volume
+</ResponseField>
+
+<ResponseField name="MaxTradeVol" type="decimal">
+  Maximum trade volume
+</ResponseField>
+
+<ResponseField name="TickSize" type="decimal">
+  Tick size for price movements
+</ResponseField>
+
+<ResponseField name="MaturityDate" type="string">
+  Maturity date (for derivatives)
+</ResponseField>
+
+<ResponseField name="ContractMultiplier" type="decimal">
+  Contract multiplier (for derivatives)
+</ResponseField>
+
+<ResponseField name="RoundLot" type="decimal">
+  Standard trading lot size
+</ResponseField>
+
+<ResponseField name="PriceConvertionFactor" type="decimal">
+  Price conversion factor
+</ResponseField>
+
+<ResponseField name="Currency" type="string">
+  Trading currency (e.g., "ARS", "USD")
+</ResponseField>
+
+<ResponseField name="InstrumentPricePrecision" type="int">
+  Number of decimal places for prices
+</ResponseField>
+
+<ResponseField name="InstrumentSizePrecision" type="int">
+  Number of decimal places for quantities
+</ResponseField>
+
+<ResponseField name="CfiCode" type="string">
+  Classification of Financial Instruments (CFI) code
+</ResponseField>
+
+### Example
+
+```csharp
+using Primary;
+using Primary.Data;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get detailed instrument information
+var details = await api.GetAllInstrumentsWithDetails();
+
+foreach (var detail in details)
+{
+    Console.WriteLine($"Symbol: {detail.InstrumentId.Symbol}");
+    Console.WriteLine($"Currency: {detail.Currency}");
+    Console.WriteLine($"Tick Size: {detail.TickSize}");
+    Console.WriteLine($"Price Range: {detail.LowLimitPrice} - {detail.HighLimitPrice}");
+    Console.WriteLine($"Price Precision: {detail.InstrumentPricePrecision}");
+    Console.WriteLine();
+}
+```
+
+### Search for Specific Instrument
+
+```csharp
+// Find a specific instrument by symbol
+var details = await api.GetAllInstrumentsWithDetails();
+var ggalDetail = details.FirstOrDefault(d => 
+    d.InstrumentId.Symbol.Contains("GGAL")
+);
+
+if (ggalDetail != null)
+{
+    Console.WriteLine($"GGAL Details:");
+    Console.WriteLine($"  Min Price Increment: {ggalDetail.MinPriceIncrement}");
+    Console.WriteLine($"  Currency: {ggalDetail.Currency}");
+    Console.WriteLine($"  Round Lot: {ggalDetail.RoundLot}");
+}
+```
+
+### Filter by Currency
+
+```csharp
+var details = await api.GetAllInstrumentsWithDetails();
+
+// Get all USD-denominated instruments
+var usdInstruments = details.Where(d => d.Currency == "USD");
+
+foreach (var instrument in usdInstruments)
+{
+    Console.WriteLine($"{instrument.InstrumentId.Symbol} ({instrument.Currency})");
+}
+```
+
+### API Endpoint
+
+```
+GET {BaseUri}/rest/instruments/details
+```
+
+## Instrument Class
+
+The `Instrument` class represents a tradable instrument:
+
+```csharp
+public class Instrument
+{
+    public string Market { get; set; }
+    public string Symbol { get; set; }
+    
+    // Helper methods
+    public string SymbolWithoutPrefix();
+    public string Ticker();
+    public string SettlementTerm();
+}
+```
+
+### Helper Methods
+
+<ResponseField name="SymbolWithoutPrefix()" type="string">
+  Returns the symbol without the "MERV - XMEV - " prefix
+  
+  Example: `"MERV - XMEV - GGAL - 48hs"` → `"GGAL - 48hs"`
+</ResponseField>
+
+<ResponseField name="Ticker()" type="string">
+  Extracts just the ticker from the symbol
+  
+  Example: `"MERV - XMEV - GGAL - 48hs"` → `"GGAL"`
+</ResponseField>
+
+<ResponseField name="SettlementTerm()" type="string">
+  Extracts the settlement term from the symbol
+  
+  Example: `"MERV - XMEV - GGAL - 48hs"` → `"- 48hs"`
+</ResponseField>
+
+### Example Using Helper Methods
+
+```csharp
+var instrument = new Instrument
+{
+    Market = "MERV",
+    Symbol = "MERV - XMEV - GGAL - 48hs"
+};
+
+Console.WriteLine($"Full Symbol: {instrument.Symbol}");
+Console.WriteLine($"Without Prefix: {instrument.SymbolWithoutPrefix()}");
+Console.WriteLine($"Ticker: {instrument.Ticker()}");
+Console.WriteLine($"Settlement: {instrument.SettlementTerm()}");
+
+// Output:
+// Full Symbol: MERV - XMEV - GGAL - 48hs
+// Without Prefix: GGAL - 48hs
+// Ticker: GGAL
+// Settlement: - 48hs
+```
+
+## Settlement Types
+
+Instruments can have different settlement types:
+
+```csharp
+public enum SettlementType
+{
+    CI,      // Immediate settlement
+    T24H,    // 24-hour settlement
+    T48H     // 48-hour settlement
+}
+```
+
+## Complete Example
+
+```csharp
+using Primary;
+using Primary.Data;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        var api = new Api(Api.DemoEndpoint);
+        await api.Login(Api.DemoUsername, Api.DemoPassword);
+        
+        // Get all instruments with details
+        var details = await api.GetAllInstrumentsWithDetails();
+        
+        Console.WriteLine($"Total instruments: {details.Count()}");
+        
+        // Find instruments with specific criteria
+        var tradableInstruments = details.Where(d => 
+            d.Currency == "ARS" && 
+            d.MinTradevol <= 1000 &&
+            d.TickSize > 0
+        );
+        
+        Console.WriteLine($"\nTradable ARS instruments: {tradableInstruments.Count()}");
+        
+        foreach (var detail in tradableInstruments.Take(5))
+        {
+            Console.WriteLine($"\n{detail.InstrumentId.Ticker()}");
+            Console.WriteLine($"  Symbol: {detail.InstrumentId.SymbolWithoutPrefix()}");
+            Console.WriteLine($"  Tick Size: {detail.TickSize}");
+            Console.WriteLine($"  Min Trade Vol: {detail.MinTradevol}");
+            Console.WriteLine($"  Price Range: {detail.LowLimitPrice:N2} - {detail.HighLimitPrice:N2}");
+        }
+    }
+}
+```

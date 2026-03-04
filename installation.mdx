@@ -1,0 +1,174 @@
+---
+title: Installation
+description: Download and install ChuchoBot on Windows
+---
+
+# Installation
+
+ChuchoBot is distributed as a portable Windows application that requires no installer. Simply download the release package, extract it, and run the executable.
+
+## Prerequisites
+
+Before installing ChuchoBot, ensure your system meets the following requirements:
+
+<Info>
+**Required software:**
+- Windows 7 or later
+- Microsoft .NET Framework 4.7.2 or higher
+</Info>
+
+### Install .NET Framework 4.7.2
+
+If you don't have .NET Framework 4.7.2 installed:
+
+1. Visit the [Microsoft .NET Framework download page](https://dotnet.microsoft.com/download/dotnet-framework/net472)
+2. Download the .NET Framework 4.7.2 Runtime installer
+3. Run the installer and follow the prompts
+4. Restart your computer if prompted
+
+### Verify Primary API access
+
+<Warning>
+ChuchoBot requires access to the Primary API (Matriz platform) provided by your broker (ALyC). The application will not function without valid API credentials.
+</Warning>
+
+You must have:
+- An active trading account with a broker that supports Matriz
+- Your Matriz username and password
+- Your broker's Primary API base URL
+
+**Common Primary API base URLs:**
+
+```
+Cocos Capital: https://api.cocos.xoms.com.ar
+Eco Valores: https://api.eco.xoms.com.ar
+Veta Capital: https://api.veta.xoms.com.ar
+Bull Market Brokers: https://api.bull.xoms.com.ar
+Cohen: https://api.cohen.xoms.com.ar
+Adcap: https://api.adcap.xoms.com.ar
+BCCH: https://api.bcch.xoms.com.ar
+```
+
+<Note>
+If you don't know your Primary API base URL, contact your broker's support team or check their documentation for Matriz API access.
+</Note>
+
+## Download ChuchoBot
+
+<Steps>
+  <Step title="Navigate to releases">
+    Go to the [ChuchoBot releases page](https://github.com/ChuchoCoder/chuchobot/releases) on GitHub.
+  </Step>
+  
+  <Step title="Download the latest version">
+    Find the latest release and download the ZIP file. The file will be named with the release date, for example:
+    
+    ```
+    ChuchoBot2023-10-06.zip
+    ```
+  </Step>
+  
+  <Step title="Extract the archive">
+    Right-click the downloaded ZIP file and select "Extract All..." or use your preferred extraction tool.
+    
+    Choose a destination folder where you want to install ChuchoBot, such as:
+    
+    ```
+    C:\Program Files\ChuchoBot
+    ```
+    
+    Or any folder of your choice.
+  </Step>
+  
+  <Step title="Run ChuchoBot.exe">
+    Navigate to the extracted folder and double-click `ChuchoBot.exe` to launch the application.
+    
+    <Info>
+    You may see a Windows SmartScreen warning on first launch. Click "More info" and then "Run anyway" to proceed.
+    </Info>
+  </Step>
+</Steps>
+
+## File structure
+
+After extraction, your ChuchoBot folder will contain:
+
+```
+ChuchoBot/
+├── ChuchoBot.exe              # Main application executable
+├── ChuchoBot.exe.config       # Configuration file
+├── Primary.dll                # Primary API library
+└── [other DLL dependencies]    # Required libraries
+```
+
+<Note>
+The `ChuchoBot.exe.config` file contains application settings including market hours, telemetry configuration, and default values. You can manually edit this file to customize advanced settings.
+</Note>
+
+## Configuration file
+
+The `ChuchoBot.exe.config` file allows you to customize:
+
+- **Market hours:** Opening and closing times for general market and CI (Contado Inmediato)
+- **Telemetry:** Application Insights connection string (can be removed to disable telemetry)
+- **Default settings:** API base URL, username, and other preferences
+
+**Default market hours:**
+
+```xml
+<setting name="MarketOpenTime" serializeAs="String">
+  <value>10:30:00</value>
+</setting>
+<setting name="MarketCloseTime" serializeAs="String">
+  <value>17:00:00</value>
+</setting>
+<setting name="MarketCloseTimeWithAuction" serializeAs="String">
+  <value>16:57:00</value>
+</setting>
+```
+
+## Disabling telemetry
+
+To disable application telemetry:
+
+1. Open `ChuchoBot.exe.config` in a text editor
+2. Locate the `<connectionStrings>` section
+3. Delete the entire section:
+
+```xml
+<connectionStrings>
+  <add name="Primary.WinFormsApp.Properties.Settings.AppInsightsConnectionString"
+    connectionString="..." />
+</connectionStrings>
+```
+
+4. Save the file and restart ChuchoBot
+
+## Troubleshooting
+
+### Application won't start
+
+- Verify .NET Framework 4.7.2 is installed
+- Check Windows Event Viewer for error details
+- Try running as Administrator
+
+### "File is blocked" error
+
+If Windows blocks the file:
+
+1. Right-click `ChuchoBot.exe`
+2. Select "Properties"
+3. Check "Unblock" at the bottom
+4. Click "Apply" and "OK"
+
+### Missing DLL errors
+
+Ensure you extracted all files from the ZIP archive, not just the executable.
+
+## Next steps
+
+Once ChuchoBot is installed and running, proceed to the [quick start guide](/quickstart) to:
+- Log in with your Matriz credentials
+- Configure your Primary API connection
+- Add instruments to monitor
+- Run your first arbitrage scan

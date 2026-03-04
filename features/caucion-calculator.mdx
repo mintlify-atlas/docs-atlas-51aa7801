@@ -1,0 +1,493 @@
+---
+title: 'Caucion Calculator'
+description: 'Calculate returns and costs for caucion (repo) operations with detailed fee breakdowns'
+icon: 'calculator'
+---
+
+## Overview
+
+The Caucion Calculator provides precise calculations for repo operations (caucion colocadora and tomadora), including all fees, market rights, and net interest returns.
+
+<Info>
+**What is Caucion?** Caucion is a collateralized money market instrument in Argentina, similar to repurchase agreements (repos). You can either place cash to earn interest (colocadora) or borrow cash by paying interest (tomadora).
+</Info>
+
+## Caucion Types
+
+<CardGroup cols={2}>
+  <Card title="Caucion Colocadora" icon="piggy-bank">
+    **Lending Money**
+    
+    You place cash in the market, earning interest secured by securities as collateral.
+    
+    **Use case:** Earn returns on idle cash
+  </Card>
+  <Card title="Caucion Tomadora" icon="hand-holding-dollar">
+    **Borrowing Money**
+    
+    You borrow cash from the market, paying interest and providing securities as collateral.
+    
+    **Use case:** Finance purchases, cover settlement needs
+  </Card>
+</CardGroup>
+
+## How Caucion Works
+
+### Caucion Colocadora (Placing)
+
+<Steps>
+  <Step title="Place Order">
+    Offer to lend cash at a specific TNA (annual nominal rate) and term
+  </Step>
+  <Step title="Match and Settlement">
+    Your order matches with a taker, cash is transferred
+  </Step>
+  <Step title="Wait for Maturity">
+    Securities are held as collateral during the term
+  </Step>
+  <Step title="Receive Principal + Interest">
+    At maturity, receive your cash plus interest, minus fees
+  </Step>
+</Steps>
+
+### Caucion Tomadora (Taking)
+
+<Steps>
+  <Step title="Take Order">
+    Accept an offer to borrow cash at a specific TNA and term
+  </Step>
+  <Step title="Receive Cash">
+    Cash is credited, securities are locked as collateral
+  </Step>
+  <Step title="Use Borrowed Funds">
+    Finance purchases or cover settlement needs
+  </Step>
+  <Step title="Repay Principal + Interest">
+    At maturity, repay the cash plus interest plus all fees
+  </Step>
+</Steps>
+
+## Calculation Formula
+
+The caucion calculator implements the complete fee structure:
+
+```csharp
+public class Caucion
+{
+    // Constants (BYMA rates as of 2023)
+    const decimal DerechosMercadoTasaDiaria = 0.045m / 100 / 90;
+    const decimal GastosGarantiaTasaDiaria = 0.045m / 100 / 90;
+    const decimal IVAPorcentaje = 0.21m;
+    
+    // Core calculation
+    Tasa = Math.Abs(TNA / 100 * Dias / 365);
+    Interes = ImporteBruto * Tasa;
+    ImporteConInteres = ImporteBruto + Interes;
+    
+    // Fee calculations
+    Arancel = ImporteConInteres * (ArancelTNA / 100 * Dias / 365);
+    DerechosMercado = ImporteConInteres * DerechosMercadoTasaDiaria * Dias;
+    GastosGarantia = EsColocadora ? 0 : 
+        ImporteConInteres * GastosGarantiaTasaDiaria * Dias;
+    
+    // Total fees
+    Gastos = Arancel + DerechosMercado + GastosGarantia;
+    IVAGastos = Gastos * IVAPorcentaje;
+    TotalGastos = Gastos + IVAGastos;
+    
+    // Net amounts
+    if (EsColocadora) {
+        InteresNeto = Interes - TotalGastos;  // Interest received minus costs
+        ImporteNeto = ImporteConInteres - TotalGastos;
+    } else {
+        InteresNeto = Interes + TotalGastos;  // Interest paid plus costs
+        ImporteNeto = ImporteConInteres + TotalGastos;
+    }
+}
+```
+
+## Fee Components
+
+### 1. Broker Commission (Arancel)
+
+**Caucion Colocadora TNA**: Rate charged when placing caucion (lending)
+**Caucion Tomadora TNA**: Rate charged when taking caucion (borrowing)
+
+<Note>
+Broker commissions are **broker-specific** and vary widely. Configure your ALyC's exact rates in ChuchoBot settings for accurate calculations.
+</Note>
+
+**Calculation:**
+```
+Arancel = (Principal + Interest) × (ArancelTNA / 100) × (Days / 365)
+```
+
+### 2. Market Rights (Derechos de Mercado)
+
+Charged by BYMA on all caucion operations:
+- **Rate**: 0.045% annualized, up to 90 days
+- **Applied to**: Principal + Interest
+- **Applies to**: Both colocadora and tomadora
+
+**Calculation:**
+```
+Daily Rate = 0.045% / 100 / 90 = 0.000005
+Derechos = (Principal + Interest) × Daily Rate × Days
+```
+
+### 3. Guarantee Costs (Gastos de Garantía)
+
+Administration fee for collateral management:
+- **Rate**: 0.045% annualized, up to 90 days  
+- **Applied to**: Principal + Interest
+- **Applies to**: Only tomadora (borrower pays)
+- **Colocadora**: Zero guarantee costs
+
+**Calculation:**
+```
+Daily Rate = 0.045% / 100 / 90 = 0.000005
+
+If Tomadora:
+    Gastos Garantía = (Principal + Interest) × Daily Rate × Days
+If Colocadora:
+    Gastos Garantía = 0
+```
+
+### 4. VAT (IVA)
+
+Value-added tax on all fees:
+- **Rate**: 21%
+- **Applied to**: Arancel + Derechos + Gastos Garantía
+
+**Calculation:**
+```
+IVA = (Arancel + Derechos + Gastos Garantía) × 21%
+```
+
+## Complete Example: Caucion Colocadora
+
+**Parameters:**
+- Principal: $100,000
+- TNA: 40%
+- Days: 7
+- Broker TNA (Colocadora): 1%
+
+**Calculation:**
+```
+1. Interest Rate:
+   Tasa = 40% / 100 × 7 / 365 = 0.007671 (0.7671%)
+
+2. Gross Interest:
+   Interes = $100,000 × 0.007671 = $767.10
+   
+3. Principal + Interest:
+   ImporteConInteres = $100,000 + $767.10 = $100,767.10
+
+4. Broker Commission:
+   Arancel = $100,767.10 × (1% / 100) × (7 / 365) = $19.33
+
+5. Market Rights:
+   Daily Rate = 0.045% / 100 / 90 = 0.000005
+   Derechos = $100,767.10 × 0.000005 × 7 = $3.53
+
+6. Guarantee Costs (Colocadora):
+   GastosGarantia = $0 (only for tomadora)
+
+7. Total Fees (before VAT):
+   Gastos = $19.33 + $3.53 + $0 = $22.86
+
+8. VAT:
+   IVA = $22.86 × 21% = $4.80
+
+9. Total Fees:
+   TotalGastos = $22.86 + $4.80 = $27.66
+
+10. Net Interest (what you actually earn):
+    InteresNeto = $767.10 - $27.66 = $739.44
+
+11. Net Amount Received:
+    ImporteNeto = $100,767.10 - $27.66 = $100,739.44
+
+12. Effective Return:
+    Effective TNA = ($739.44 / $100,000) × (365 / 7) × 100 = 38.56%
+```
+
+<Info>
+**Result**: On a 40% TNA caucion colocadora, your effective return is 38.56% after all fees (3.6% reduction).
+</Info>
+
+## Complete Example: Caucion Tomadora
+
+**Parameters:**
+- Principal needed: $100,000
+- TNA: 45%
+- Days: 3
+- Broker TNA (Tomadora): 2%
+
+**Calculation:**
+```
+1. Interest Rate:
+   Tasa = 45% / 100 × 3 / 365 = 0.003699 (0.3699%)
+
+2. Interest to Pay:
+   Interes = $100,000 × 0.003699 = $369.90
+   
+3. Principal + Interest:
+   ImporteConInteres = $100,000 + $369.90 = $100,369.90
+
+4. Broker Commission:
+   Arancel = $100,369.90 × (2% / 100) × (3 / 365) = $16.51
+
+5. Market Rights:
+   Derechos = $100,369.90 × 0.000005 × 3 = $1.51
+
+6. Guarantee Costs (Tomadora pays):
+   GastosGarantia = $100,369.90 × 0.000005 × 3 = $1.51
+
+7. Total Fees (before VAT):
+   Gastos = $16.51 + $1.51 + $1.51 = $19.53
+
+8. VAT:
+   IVA = $19.53 × 21% = $4.10
+
+9. Total Fees:
+   TotalGastos = $19.53 + $4.10 = $23.63
+
+10. Net Interest + Fees:
+    InteresNeto = $369.90 + $23.63 = $393.53
+
+11. Total to Repay:
+    ImporteNeto = $100,369.90 + $23.63 = $100,393.53
+
+12. Effective Cost:
+    Effective TNA = ($393.53 / $100,000) × (365 / 3) × 100 = 47.86%
+```
+
+<Warning>
+**Result**: On a 45% TNA caucion tomadora, your effective cost is 47.86% after all fees (6.4% increase). Tomadora is more expensive due to guarantee costs.
+</Warning>
+
+## Configuring Commission Rates
+
+For accurate calculations, configure your broker's caucion rates:
+
+1. Open the Settlement Term Arbitrage scanner
+2. Look for fields:
+   - **Comisión Tomadora (TNA)**
+   - **Comisión Colocadora (TNA)**
+3. Enter your broker's rates (check with your ALyC)
+
+<Note>
+These rates are saved and used across all caucion calculations in ChuchoBot, including settlement arbitrage P&L.
+</Note>
+
+### Common Broker Rates (Examples)
+
+| Broker Type | Colocadora TNA | Tomadora TNA |
+|-------------|----------------|---------------|
+| Full-service | 0.5% - 2% | 1% - 3% |
+| Discount | 0.1% - 1% | 0.5% - 2% |
+| Premium | 2% - 5% | 3% - 6% |
+
+<Warning>
+These are examples only. **Always verify with your specific broker.** Rates can vary significantly.
+</Warning>
+
+## Settlement Days Calculation
+
+Caucion settlement follows market calendar rules:
+
+```csharp
+public static int GetDiasLiquidacion24H()
+{
+    // Try to find caucion instrument to determine actual settlement
+    for (var caucionDiasLiq = 1; caucionDiasLiq < 10; caucionDiasLiq++)
+    {
+        var caucionTicker = GetCaucionPesosTicker(caucionDiasLiq);
+        var caucionInstrument = Argentina.Data
+            .GetInstrumentDetailOrNull(caucionTicker);
+        if (caucionInstrument != null)
+        {
+            return caucionDiasLiq;
+        }
+    }
+    
+    // Default: 1 day, or 3 days on Friday
+    var diasLiq = DateTime.Today.DayOfWeek == DayOfWeek.Friday ? 3 : 1;
+    return diasLiq;
+}
+```
+
+<Info>
+**Friday Rule**: 24hs settlement on Friday typically means 3 days (Monday settlement) due to the weekend.
+</Info>
+
+## Use Cases for Caucion
+
+### Caucion Colocadora Use Cases
+
+<AccordionGroup>
+  <Accordion title="Earn on Idle Cash">
+    Instead of leaving pesos uninvested, place them in caucion to earn daily returns.
+  </Accordion>
+  <Accordion title="Settlement Arbitrage (Part 1)">
+    When you sell CI and buy 24hs, place the CI proceeds in caucion to earn interest during the settlement gap.
+  </Accordion>
+  <Accordion title="Short-Term Parking">
+    Park cash overnight or for a few days while deciding on next investment.
+  </Accordion>
+  <Accordion title="Hedge Against Devaluation">
+    Caucion rates often track inflation expectations, providing some protection.
+  </Accordion>
+</AccordionGroup>
+
+### Caucion Tomadora Use Cases
+
+<AccordionGroup>
+  <Accordion title="Settlement Arbitrage (Part 2)">
+    When you buy CI and sell 24hs, take caucion to finance the CI purchase until 24hs settlement.
+  </Accordion>
+  <Accordion title="Cover Short-Term Liquidity">
+    Bridge temporary cash shortfalls without selling investments.
+  </Accordion>
+  <Accordion title="Leverage Positions">
+    Borrow to increase position sizes (caution: adds risk).
+  </Accordion>
+  <Accordion title="T+1 Settlement Coverage">
+    Finance purchases that settle before your cash arrives.
+  </Accordion>
+</AccordionGroup>
+
+## Caucion in Settlement Arbitrage
+
+Caucion is integral to settlement term arbitrage:
+
+### Scenario 1: Venta CI / Compra 24hs
+```
+1. Sell GGAL in CI → Receive $100,000 today
+2. Buy GGAL in 24hs → Pay $99,500 tomorrow
+3. Place $100,000 caucion for 1 day @ 40% TNA
+
+Result:
+- Spread profit: $500
+- Caucion interest (net): ~$106
+- Total P&L: ~$606 (before transaction fees)
+```
+
+### Scenario 2: Compra CI / Venta 24hs
+```
+1. Buy SPY in CI → Pay $50,000 today
+2. Sell SPY in 24hs → Receive $50,300 tomorrow  
+3. Take $50,000 caucion for 1 day @ 45% TNA
+
+Result:
+- Spread profit: $300
+- Caucion cost (net): ~$62
+- Total P&L: ~$238 (before transaction fees)
+```
+
+<Note>
+The Settlement Arbitrage Scanner automatically calculates caucion costs/earnings in the P&L column using your configured rates.
+</Note>
+
+## Risk Considerations
+
+<AccordionGroup>
+  <Accordion title="Counterparty Risk (Minimal)">
+    Caucion is collateralized and cleared through BYMA, making default risk very low. However, it's not zero.
+  </Accordion>
+  <Accordion title="Rate Volatility">
+    Caucion rates can change rapidly based on market liquidity and central bank policy.
+  </Accordion>
+  <Accordion title="Opportunity Cost">
+    Returns from caucion may underperform other investments during bull markets.
+  </Accordion>
+  <Accordion title="Fees Eat Returns on Short Terms">
+    For very short periods (1-2 days), fees can consume a significant portion of interest.
+  </Accordion>
+  <Accordion title="Not BCRA-Insured">
+    Unlike bank deposits, caucion is not covered by deposit insurance.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Configure Accurate Broker Rates">
+    Using incorrect rates makes all P&L calculations unreliable. Verify with your ALyC.
+  </Accordion>
+  <Accordion title="Consider Net Returns">
+    Always calculate after-fee returns. The posted TNA is not what you actually earn.
+  </Accordion>
+  <Accordion title="Match Term to Needs">
+    Don't lock cash in multi-day caucion if you might need it tomorrow.
+  </Accordion>
+  <Accordion title="Compare to Alternatives">
+    Check if FCI (money market funds) offer better net returns for your time horizon.
+  </Accordion>
+  <Accordion title="Monitor Weekend Effect">
+    Friday caucion often has different rates due to the 3-day settlement period.
+  </Accordion>
+</AccordionGroup>
+
+## Caucion vs Other Cash Alternatives
+
+| Product | Typical Return | Liquidity | Fees | Best For |
+|---------|----------------|-----------|------|----------|
+| **Caucion** | Market TNA | T+days | Moderate | Short-term (1-7 days) |
+| **Money Market FCI** | Slightly lower | T+1 | Low | Medium-term (1+ weeks) |
+| **Time Deposit** | Fixed | Locked | Low | Fixed periods |
+| **Savings Account** | Low | Immediate | None | Emergency reserves |
+
+## Technical Details
+
+### Caucion Ticker Format
+
+Caucion instruments are identified by:
+```
+Format: MERV - XMEV - PESOS - {Days}D
+
+Examples:
+- 1-day caucion: MERV - XMEV - PESOS - 1D
+- 7-day caucion: MERV - XMEV - PESOS - 7D
+- 30-day caucion: MERV - XMEV - PESOS - 30D
+```
+
+### Rate Quotation
+
+Caucion rates are quoted as TNA (Tasa Nominal Anual):
+- Not compounded
+- Simple interest calculation
+- Annualized for comparison purposes
+
+**Converting TNA to effective rate:**
+```
+Effective Rate = TNA / 100 × (Days / 365)
+
+Example: 40% TNA for 7 days
+Effective = 0.40 × (7 / 365) = 0.7671%
+```
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Settlement Arbitrage" icon="calendar-days" href="/features/settlement-arbitrage">
+    Caucion financing is essential for settlement arbitrage operations
+  </Card>
+  <Card title="Market Data" icon="signal" href="/features/market-data">
+    Real-time caucion rates available via WebSocket
+  </Card>
+</CardGroup>
+
+## Official References
+
+- [BYMA Market Rights Documentation](https://www.byma.com.ar/que-es-byma/derechos-membresias-2/)
+- [BYMA Fee Schedule (PDF)](https://www.byma.com.ar/wp-content/uploads/dlm_uploads/2023/10/BYMA-Derechos-Mercado-sobre-Operaciones-2023-10-11.pdf)
+
+## Technical Reference
+
+The caucion calculator is implemented in:
+- `Caucion.cs` - Core calculation logic with all fee formulas
+- `Settlement.cs` - Settlement day determination
+- `FrmCaucion.cs` - Standalone caucion calculator UI
+- `SettlementTermTrade.cs` - Integration with settlement arbitrage

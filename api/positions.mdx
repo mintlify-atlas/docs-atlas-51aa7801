@@ -1,0 +1,395 @@
+---
+title: 'Positions'
+description: 'Get account positions and portfolio information'
+---
+
+## Get Accounts
+
+Retrieve all accounts associated with your authenticated user.
+
+```csharp
+public async Task<Account[]> GetAccounts()
+```
+
+### Response
+
+Returns an array of `Account` objects:
+
+<ResponseField name="Id" type="int">
+  Numeric account identifier
+</ResponseField>
+
+<ResponseField name="Name" type="string">
+  Account name/number (e.g., "REM2046")
+</ResponseField>
+
+<ResponseField name="BrokerId" type="int">
+  Broker identifier
+</ResponseField>
+
+<ResponseField name="Status" type="bool">
+  Account status (true = active)
+</ResponseField>
+
+### Example
+
+```csharp
+using Primary;
+using System;
+using System.Threading.Tasks;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get all accounts
+var accounts = await api.GetAccounts();
+
+foreach (var account in accounts)
+{
+    Console.WriteLine($"Account: {account.Name}");
+    Console.WriteLine($"  ID: {account.Id}");
+    Console.WriteLine($"  Broker: {account.BrokerId}");
+    Console.WriteLine($"  Active: {account.Status}");
+    Console.WriteLine();
+}
+```
+
+### API Endpoint
+
+```
+GET {BaseUri}/rest/accounts
+```
+
+## Get Positions (by Account Array)
+
+Retrieve positions for multiple accounts.
+
+```csharp
+public async Task<Position[]> GetPositions(Account[] accounts)
+```
+
+### Parameters
+
+<ParamField path="accounts" type="Account[]" required>
+  Array of account objects to get positions for
+</ParamField>
+
+### Example
+
+```csharp
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get all accounts
+var accounts = await api.GetAccounts();
+
+// Get positions for all accounts
+var positions = await api.GetPositions(accounts);
+
+foreach (var position in positions)
+{
+    Console.WriteLine($"{position.Symbol}");
+    Console.WriteLine($"  Buy: {position.BuySize} @ {position.BuyPrice}");
+    Console.WriteLine($"  Sell: {position.SellSize} @ {position.SellPrice}");
+    Console.WriteLine($"  P&L: {position.TotalDiff}");
+}
+```
+
+## Get Positions (by Account Name)
+
+Retrieve positions for a specific account by name.
+
+```csharp
+public async Task<Position[]> GetPositions(string accountName)
+```
+
+### Parameters
+
+<ParamField path="accountName" type="string" required>
+  Account name/number (e.g., "REM2046")
+</ParamField>
+
+### Response
+
+Returns an array of `Position` objects:
+
+<ResponseField name="Instrument" type="PositionInstrument">
+  Instrument information:
+  - `SymbolReference`: Reference symbol
+  - `SettlementType`: Settlement type (CI, T24H, T48H)
+</ResponseField>
+
+<ResponseField name="Symbol" type="string">
+  Full instrument symbol
+</ResponseField>
+
+<ResponseField name="TradingSymbol" type="string">
+  Trading symbol identifier
+</ResponseField>
+
+<ResponseField name="BuySize" type="decimal">
+  Current long position size
+</ResponseField>
+
+<ResponseField name="BuyPrice" type="decimal">
+  Average buy price
+</ResponseField>
+
+<ResponseField name="SellSize" type="decimal">
+  Current short position size
+</ResponseField>
+
+<ResponseField name="SellPrice" type="decimal">
+  Average sell price
+</ResponseField>
+
+<ResponseField name="OriginalBuySize" type="decimal">
+  Original buy size
+</ResponseField>
+
+<ResponseField name="OriginalBuyPrice" type="decimal">
+  Original buy price
+</ResponseField>
+
+<ResponseField name="OriginalSellSize" type="decimal">
+  Original sell size
+</ResponseField>
+
+<ResponseField name="OriginalSellPrice" type="decimal">
+  Original sell price
+</ResponseField>
+
+<ResponseField name="TotalDailyDiff" type="decimal">
+  Daily profit/loss
+</ResponseField>
+
+<ResponseField name="TotalDiff" type="decimal">
+  Total profit/loss
+</ResponseField>
+
+### Example
+
+```csharp
+using Primary;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get positions for demo account
+var positions = await api.GetPositions(Api.DemoAccount);
+
+Console.WriteLine($"Total positions: {positions.Length}\n");
+
+foreach (var position in positions)
+{
+    Console.WriteLine($"Symbol: {position.Symbol}");
+    Console.WriteLine($"  Reference: {position.Instrument.SymbolReference}");
+    Console.WriteLine($"  Settlement: {position.Instrument.SettlementType}");
+    
+    if (position.BuySize > 0)
+    {
+        Console.WriteLine($"  Long: {position.BuySize} @ {position.BuyPrice:N2}");
+    }
+    
+    if (position.SellSize > 0)
+    {
+        Console.WriteLine($"  Short: {position.SellSize} @ {position.SellPrice:N2}");
+    }
+    
+    Console.WriteLine($"  Daily P&L: {position.TotalDailyDiff:N2}");
+    Console.WriteLine($"  Total P&L: {position.TotalDiff:N2}");
+    Console.WriteLine();
+}
+```
+
+### Calculate Portfolio Value
+
+```csharp
+var positions = await api.GetPositions(Api.DemoAccount);
+
+decimal totalPnL = 0;
+decimal totalDailyPnL = 0;
+
+foreach (var position in positions)
+{
+    totalPnL += position.TotalDiff;
+    totalDailyPnL += position.TotalDailyDiff;
+}
+
+Console.WriteLine($"Portfolio Statistics:");
+Console.WriteLine($"  Total P&L: {totalPnL:N2}");
+Console.WriteLine($"  Daily P&L: {totalDailyPnL:N2}");
+Console.WriteLine($"  Number of Positions: {positions.Length}");
+```
+
+### Filter Positions
+
+```csharp
+var positions = await api.GetPositions(Api.DemoAccount);
+
+// Only long positions
+var longPositions = positions.Where(p => p.BuySize > 0);
+
+// Only short positions
+var shortPositions = positions.Where(p => p.SellSize > 0);
+
+// Profitable positions
+var profitablePositions = positions.Where(p => p.TotalDiff > 0);
+
+// Losing positions
+var losingPositions = positions.Where(p => p.TotalDiff < 0);
+
+Console.WriteLine($"Long: {longPositions.Count()}");
+Console.WriteLine($"Short: {shortPositions.Count()}");
+Console.WriteLine($"Profitable: {profitablePositions.Count()}");
+Console.WriteLine($"Losing: {losingPositions.Count()}");
+```
+
+### API Endpoint
+
+```
+GET {BaseUri}/rest/risk/position/getPositions/{accountName}
+```
+
+## Settlement Types
+
+Positions include settlement type information:
+
+```csharp
+public enum SettlementType
+{
+    CI,      // Immediate settlement (value: 0)
+    T24H,    // 24-hour settlement (value: 1)
+    T48H     // 48-hour settlement (value: 2)
+}
+```
+
+### Example: Group by Settlement Type
+
+```csharp
+var positions = await api.GetPositions(Api.DemoAccount);
+
+var grouped = positions.GroupBy(p => p.Instrument.SettlementType);
+
+foreach (var group in grouped)
+{
+    Console.WriteLine($"\n{group.Key} Settlement:");
+    foreach (var position in group)
+    {
+        Console.WriteLine($"  {position.Instrument.SymbolReference}: {position.TotalDiff:N2}");
+    }
+}
+```
+
+## Complete Portfolio Manager Example
+
+```csharp
+using Primary;
+using Primary.Data;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+class PortfolioManager
+{
+    static async Task Main()
+    {
+        var api = new Api(Api.DemoEndpoint);
+        await api.Login(Api.DemoUsername, Api.DemoPassword);
+        
+        // Get all accounts
+        var accounts = await api.GetAccounts();
+        Console.WriteLine($"Found {accounts.Length} account(s)\n");
+        
+        foreach (var account in accounts)
+        {
+            Console.WriteLine($"\n{'='} Account: {account.Name} {'='}");
+            
+            // Get positions for this account
+            var positions = await api.GetPositions(account.Name);
+            
+            if (positions.Length == 0)
+            {
+                Console.WriteLine("  No positions");
+                continue;
+            }
+            
+            // Calculate statistics
+            decimal totalValue = 0;
+            decimal totalPnL = 0;
+            decimal totalDailyPnL = 0;
+            int longCount = 0;
+            int shortCount = 0;
+            
+            foreach (var position in positions)
+            {
+                decimal positionValue = (position.BuySize * position.BuyPrice) + 
+                                       (position.SellSize * position.SellPrice);
+                totalValue += positionValue;
+                totalPnL += position.TotalDiff;
+                totalDailyPnL += position.TotalDailyDiff;
+                
+                if (position.BuySize > 0) longCount++;
+                if (position.SellSize > 0) shortCount++;
+            }
+            
+            // Display summary
+            Console.WriteLine($"\n  Portfolio Summary:");
+            Console.WriteLine($"    Total Positions: {positions.Length}");
+            Console.WriteLine($"    Long: {longCount} | Short: {shortCount}");
+            Console.WriteLine($"    Total Value: {totalValue:N2}");
+            Console.WriteLine($"    Total P&L: {totalPnL:N2}");
+            Console.WriteLine($"    Daily P&L: {totalDailyPnL:N2}");
+            Console.WriteLine($"    Return: {(totalPnL / totalValue * 100):N2}%");
+            
+            // Display top 5 positions by P&L
+            Console.WriteLine($"\n  Top Positions:");
+            var topPositions = positions
+                .OrderByDescending(p => p.TotalDiff)
+                .Take(5);
+            
+            foreach (var position in topPositions)
+            {
+                string direction = position.BuySize > 0 ? "LONG" : "SHORT";
+                decimal size = position.BuySize > 0 ? position.BuySize : position.SellSize;
+                decimal price = position.BuySize > 0 ? position.BuyPrice : position.SellPrice;
+                
+                Console.WriteLine($"    {position.Instrument.SymbolReference,-8} {direction,-6} {size,8:N0} @ {price,10:N2}  P&L: {position.TotalDiff,10:N2}");
+            }
+        }
+    }
+}
+```
+
+## Response Format
+
+The positions endpoint returns JSON in this format:
+
+```json
+{
+  "status": "OK",
+  "positions": [
+    {
+      "instrument": {
+        "symbolReference": "GGAL",
+        "settlType": 2
+      },
+      "symbol": "MERV - XMEV - GGAL - 48hs",
+      "buySize": 100.0,
+      "buyPrice": 150.50,
+      "sellSize": 0.0,
+      "sellPrice": 0.0,
+      "totalDailyDiff": 12.5,
+      "totalDiff": 250.75,
+      "tradingSymbol": "MERV - XMEV - GGAL - 48hs",
+      "originalBuyPrice": 150.50,
+      "originalSellPrice": 0.0,
+      "originalBuySize": 100,
+      "originalSellSize": 0
+    }
+  ]
+}
+```

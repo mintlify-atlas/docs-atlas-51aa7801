@@ -1,0 +1,251 @@
+---
+title: 'Settlement Term Arbitrage Scanner'
+description: 'Detect and analyze arbitrage opportunities across different settlement terms (CI and 24hs) in real-time'
+icon: 'calendar-days'
+---
+
+## Overview
+
+The Settlement Term Arbitrage Scanner automatically detects profitable opportunities to arbitrage the price differences between immediate settlement (CI) and 24-hour settlement (24hs) for the same instrument.
+
+<Info>
+**How it works:** When the same asset trades at different prices depending on its settlement term, you can profit by buying in one term and selling in another, while using caucion (repo) to finance the operation.
+</Info>
+
+![Settlement Term Arbitrage Scanner](/screenshots/ArbitrajePlazos.png)
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Real-Time Scanning" icon="radar">
+    Continuously monitors all configured instruments for arbitrage opportunities
+  </Card>
+  <Card title="Profit & Loss Calculator" icon="calculator">
+    Calculates precise P&L including commissions, market fees, and caucion costs
+  </Card>
+  <Card title="Portfolio Filter" icon="wallet">
+    Option to show only arbitrages possible with your current holdings
+  </Card>
+  <Card title="Profitable Only" icon="filter">
+    Filter to display only opportunities with positive P&L
+  </Card>
+</CardGroup>
+
+## Scanner Options
+
+<Tabs>
+  <Tab title="All Instruments">
+    View arbitrage opportunities for all monitored instruments, regardless of your portfolio holdings.
+    
+    **Use case:** Discover new opportunities that may require acquiring positions.
+  </Tab>
+  <Tab title="Portfolio Only">
+    Filter to show only arbitrages you can execute with instruments already in your portfolio.
+    
+    **Use case:** Quick execution on available holdings without additional purchases.
+  </Tab>
+  <Tab title="Profitable Only">
+    Display only arbitrages where the P&L column shows a positive value.
+    
+    **Use case:** Focus on immediately actionable opportunities.
+  </Tab>
+</Tabs>
+
+## How Settlement Arbitrage Works
+
+### Calculation Formula
+
+The scanner uses the following logic to calculate arbitrage profitability:
+
+```csharp
+// Spread TNA (annualized)
+SpreadTNA = ((SellPrice / BuyPrice) - 1) / Days * 365
+
+// Spread vs Caucion
+SpreadCaucion = SpreadTNA - CaucionTNA
+
+// Profit/Loss calculation
+if (EsCaucionColocadora) {
+    ProfitLoss = SellTotal - BuyTotal + InteresNeto
+} else {
+    ProfitLoss = SellTotal - BuyTotal - InteresNeto
+}
+```
+
+### Market Fees & Commissions
+
+All calculations include:
+- **Broker commission**: Configurable (default 0.10%)
+- **Market rights (Derechos de Mercado)**:
+  - Bonds: 0.01%
+  - Treasury Bills (Letras): 0.001%
+  - Stocks & CEDEARs: 0.08%
+- **Caucion fees**: Broker-specific TNA for both taker and placer
+
+<Note>
+Configure accurate commission rates in the scanner window for precise P&L calculations. Default values may not match your broker's rates.
+</Note>
+
+## Operation Types
+
+### Type 1: Sell CI, Buy 24hs (Requires Holdings)
+
+When the CI settlement price is higher than 24hs:
+
+<Steps>
+  <Step title="Sell in CI">
+    Sell the instrument with immediate settlement to lock in the higher price
+  </Step>
+  <Step title="Buy in 24hs">
+    Simultaneously buy the same instrument with 24-hour settlement at the lower price
+  </Step>
+  <Step title="Place Caucion">
+    Place the cash from the CI sale in caucion (repo) to earn interest until 24hs settlement
+  </Step>
+</Steps>
+
+**Example:**
+- Sell 1,000 NVDA at CI: $50.00 → Receive $50,000 today
+- Buy 1,000 NVDA at 24hs: $49.80 → Pay $49,800 tomorrow
+- Place $50,000 caucion for 1 day → Earn interest
+- **Net profit**: Price spread + caucion interest - fees
+
+### Type 2: Buy CI, Sell 24hs (Requires Capital)
+
+When the 24hs settlement price is higher than CI:
+
+<Steps>
+  <Step title="Buy in CI">
+    Buy the instrument with immediate settlement at the lower price
+  </Step>
+  <Step title="Sell in 24hs">
+    Simultaneously sell the same instrument with 24-hour settlement at the higher price
+  </Step>
+  <Step title="Take Caucion">
+    Take caucion (borrow) to cover the CI purchase until 24hs settlement
+  </Step>
+</Steps>
+
+**Example:**
+- Buy 1,000 SPY at CI: $45.00 → Pay $45,000 today
+- Sell 1,000 SPY at 24hs: $45.20 → Receive $45,200 tomorrow
+- Take $45,000 caucion for 1 day → Pay interest
+- **Net profit**: Price spread - caucion interest - fees
+
+<Warning>
+Type 2 operations require available capital or the ability to take caucion. Ensure you have sufficient margin before executing.
+</Warning>
+
+## Arbitrage Detail View
+
+Double-click any row in the scanner to open the detailed arbitrage calculator:
+
+![Settlement Term Arbitrage Detail](/screenshots/ArbitrajePlazoDetail.png)
+
+In this view you can:
+- Adjust nominal amounts
+- Modify buy/sell prices to simulate scenarios
+- Change commission rates
+- See real-time P&L recalculation
+- View detailed breakdown of all costs
+
+## Opening Arbitrage for Specific Instruments
+
+You can manually open the arbitrage calculator for any instrument:
+
+1. Go to **Arbitrajes de Plazos** > **Seleccionar instrumento y Plazos**
+2. Select:
+   - Instrument ticker
+   - Buy settlement term
+   - Sell settlement term
+
+![Arbitrage Launcher](/screenshots/ArbitrajePlazosLauncher.png)
+
+## Configuration
+
+### Caucion Commission Rates
+
+Configure broker-specific caucion rates for accurate calculations:
+
+- **Comisión Tomadora (TNA)**: Interest rate when taking caucion (borrowing)
+- **Comisión Colocadora (TNA)**: Interest rate when placing caucion (lending)
+
+<Note>
+These are broker-specific rates. Contact your ALyC (broker) to obtain the correct values.
+</Note>
+
+### Monitored Instruments
+
+Add or remove instruments from monitoring:
+
+1. **Configuración** → **Instrumentos a monitorear**
+2. Add one instrument per line (e.g., `GGAL`, `AL30`, `GD30`)
+
+![Monitored Instruments](/screenshots/InstrumentosMonitorear.png)
+
+## Understanding the Settlement Days
+
+The scanner automatically calculates settlement day differences:
+
+```csharp
+// CI is always 0 days (immediate settlement)
+// 24hs varies based on market calendar (typically 1 day, 3 on Fridays)
+
+DiasCaucion = Sell.CalculateSettlementDays(Buy, DiasLiq24H)
+EsCaucionColocadora = DiasCaucion < 0  // Negative = place caucion
+```
+
+<Info>
+The application automatically detects the correct settlement days for 24hs based on available caucion instruments in the market.
+</Info>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Monitor Multiple Instruments">
+    Add all your portfolio holdings plus liquid instruments (GD30, AL30, popular CEDEARs) to maximize opportunity detection.
+  </Accordion>
+  <Accordion title="Set Accurate Commission Rates">
+    Use your broker's exact commission and caucion rates for realistic P&L calculations. Default values are arbitrary.
+  </Accordion>
+  <Accordion title="Watch Market Hours">
+    Settlement arbitrage is most active during market hours. Opportunities diminish near closing.
+  </Accordion>
+  <Accordion title="Consider Execution Risk">
+    Scanner shows bid/offer prices. Actual execution may differ if the market moves. Use limit orders.
+  </Accordion>
+  <Accordion title="Account for Slippage">
+    The P&L is calculated on current bid/offer. Add a safety margin for price movement during execution.
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Caucion Calculator" icon="calculator" href="/features/caucion-calculator">
+    Calculate returns on caucion operations independently
+  </Card>
+  <Card title="Market Data" icon="chart-line" href="/features/market-data">
+    Real-time market data powers the arbitrage scanner
+  </Card>
+</CardGroup>
+
+## Video Tutorial
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/i0xQ3_KqdHI"
+  title="Settlement Term Arbitrage Explained"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
+
+## Technical Reference
+
+The settlement arbitrage scanner is implemented in:
+- `SettlementTermArbitrationProcessor.cs` - Main processing logic
+- `SettlementTermTrade.cs` - Trade calculation and P&L
+- `Caucion.cs` - Caucion interest and fee calculations
+- `Settlement.cs` - Settlement day determination

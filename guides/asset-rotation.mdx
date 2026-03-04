@@ -1,0 +1,375 @@
+---
+title: 'Asset Rotation Using Bond Ratios'
+description: 'Learn how to implement the "buy cheap, sell expensive" strategy using bond ratios'
+icon: 'arrows-rotate'
+---
+
+## What is Asset Rotation?
+
+Asset rotation is a trading strategy that involves **selling the expensive asset** and **buying the cheap asset** based on their historical price relationship. The most common application is rotating between similar bonds like GD30 and AL30.
+
+<Note>
+The core principle: When two similar assets diverge from their typical price relationship, you bet on mean reversion by taking opposing positions.
+</Note>
+
+## Understanding the Ratio Concept
+
+### What is a Bond Ratio?
+
+The ratio between two assets is simply:
+
+```
+Ratio = Price of Asset 1 / Price of Asset 2
+```
+
+**Example:**
+- GD30 price: $60,000
+- AL30 price: $55,000
+- GD30/AL30 ratio: 60,000 / 55,000 = 1.0909 (or 9.09% premium)
+
+### Why Ratios Matter
+
+For similar bonds (same issuer, similar characteristics):
+- The ratio typically trades in a **predictable range**
+- **Extreme highs** suggest Asset 1 is expensive vs Asset 2
+- **Extreme lows** suggest Asset 1 is cheap vs Asset 2
+- Traders profit by betting on **mean reversion**
+
+<Warning>
+There are no guarantees the ratio will revert. You're making an assumption based on historical patterns. Past performance doesn't guarantee future results.
+</Warning>
+
+## How to Visualize Bond Ratios
+
+You cannot determine if an asset is expensive or cheap without viewing the historical ratio.
+
+### Using TradingView
+
+<Steps>
+  <Step title="Open the chart for Asset 1">
+    Navigate to GD30's price chart in TradingView
+  </Step>
+  
+  <Step title="Add the Ratio indicator">
+    Click **Indicators** button at the top of the chart
+  </Step>
+  
+  <Step title="Select 'Ratio' from indicators list">
+    Search for and select the **Ratio** indicator
+  </Step>
+  
+  <Step title="Enter Asset 2 ticker">
+    Type **AL30** and click **Apply**
+  </Step>
+  
+  <Step title="Analyze the ratio chart">
+    The chart now shows GD30/AL30 ratio over time. Look for:
+    - Historical average ratio
+    - Current ratio position
+    - Extreme highs and lows
+  </Step>
+</Steps>
+
+<Tip>
+Add horizontal lines at key ratio levels to quickly identify when opportunities arise.
+</Tip>
+
+## The Asset Rotation Strategy
+
+### Core Principle: Buy Cheap, Sell Expensive
+
+When executing asset rotation:
+1. **Identify** which asset is relatively cheap vs expensive (using ratio analysis)
+2. **Buy** the cheap asset
+3. **Sell** the expensive asset for the **same total amount**
+4. **Wait** for the ratio to move in your favor
+5. **Close** both positions when the ratio normalizes
+
+### Critical Rule: Equal Dollar Amounts
+
+<Warning>
+**Do NOT trade equal nominal amounts**. Trade equal dollar amounts based on the ratio.
+</Warning>
+
+**Wrong approach:**
+- Buy 10,000 nominal AL30
+- Sell 10,000 nominal GD30
+
+**Correct approach:**
+- Calculate total dollar amount for one position
+- Use the ratio to determine the nominal amount for the other position
+
+## Complete Example: GD30/AL30 Rotation
+
+### Opening the Position
+
+**Market conditions:**
+- GD30 price: $60,000
+- AL30 price: $55,000
+- Ratio: 60,000 / 55,000 = 1.0909 (9.09% premium)
+
+**Your hypothesis:** AL30 is cheap relative to GD30. You expect AL30 to rise more (or fall less) than GD30.
+
+<Steps>
+  <Step title="Decide your total position size">
+    You want to invest $6,000,000 total
+  </Step>
+  
+  <Step title="Buy the cheap asset (AL30)">
+    - **Nominal to buy:** $6,000,000 / $55,000 = 109.09 bonds
+    - Round to 10,909 nominal (10.909 bonds × 1,000 nominal)
+    - **Total cost:** 10,909 × $55,000 / 1,000 = $5,999,950
+  </Step>
+  
+  <Step title="Sell the expensive asset (GD30)">
+    - **Nominal to sell:** We need to match ~$6,000,000
+    - Using ratio: 10,909 / 1.0909 ≈ 10,000 nominal
+    - **Total proceeds:** 10,000 × $60,000 / 1,000 = $6,000,000
+  </Step>
+</Steps>
+
+**Position summary:**
+- **Long:** 10,909 nominal AL30 (cost: $5,999,950)
+- **Short:** 10,000 nominal GD30 (proceeds: $6,000,000)
+- **Net cash:** $50 (approximately market neutral)
+
+### Closing the Position
+
+**Time passes... new market conditions:**
+- GD30 price: $59,000 (down $1,000 or -1.67%)
+- AL30 price: $54,500 (down $500 or -0.91%)
+- New ratio: 59,000 / 54,500 = 1.0826 (8.26% premium)
+
+**Analysis:** The ratio decreased from 9.09% to 8.26%, meaning AL30 outperformed GD30 (fell less). Your hypothesis was correct!
+
+<Steps>
+  <Step title="Sell your AL30 position">
+    - Sell 10,909 nominal AL30 at $54,500
+    - **Total proceeds:** 10,909 × $54,500 / 1,000 = $5,945,405
+  </Step>
+  
+  <Step title="Buy back your GD30 position">
+    - Buy 10,000 nominal GD30 at $59,000
+    - **Total cost:** 10,000 × $59,000 / 1,000 = $5,900,000
+  </Step>
+  
+  <Step title="Calculate P&L">
+    **AL30 leg:**
+    - Bought: $5,999,950
+    - Sold: $5,945,405
+    - **Loss:** -$54,545
+    
+    **GD30 leg:**
+    - Sold: $6,000,000
+    - Bought: $5,900,000
+    - **Profit:** +$100,000
+    
+    **Total P&L:** $100,000 - $54,545 = **$45,455 profit**
+  </Step>
+</Steps>
+
+<Note>
+For simplicity, this example excludes commissions and market fees. In practice, subtract approximately 0.10-0.20% total cost from your profit.
+</Note>
+
+## Understanding the Math
+
+### Why Equal Dollar Amounts?
+
+Asset rotation is a **market-neutral strategy**. You're not betting on the overall market direction, only on the **relative performance** of two assets.
+
+**If you use equal nominals:**
+- You're exposed to overall market direction
+- If markets fall 10%, you lose money even if your ratio bet is correct
+
+**If you use equal dollar amounts:**
+- Long and short positions offset
+- You profit purely from ratio movement
+- Market direction has minimal impact
+
+### Calculating Nominals from Ratio
+
+Given:
+- Asset 1 nominal amount (N1)
+- Ratio (R) = Price1 / Price2
+
+Then:
+```
+Asset 2 nominal amount (N2) = N1 / R
+```
+
+**Example:**
+- Selling 10,000 nominal GD30
+- Ratio = 1.0909
+- Need to buy: 10,000 / 1.0909 = 9,167 nominal AL30
+
+Wait, that's different from our earlier example! That's because we started with the buy side. Starting from either side works, as long as the dollar amounts match.
+
+## When to Enter and Exit
+
+### Entry Signals
+
+<AccordionGroup>
+  <Accordion title="Ratio at Historical Extremes">
+    When the ratio reaches the top or bottom of its historical range:
+    - **High ratio:** Asset 1 is expensive → Sell Asset 1, Buy Asset 2
+    - **Low ratio:** Asset 1 is cheap → Buy Asset 1, Sell Asset 2
+  </Accordion>
+  
+  <Accordion title="Divergence from Moving Average">
+    When the ratio deviates significantly from its moving average:
+    - Calculate 20-day or 50-day moving average of the ratio
+    - Enter when current ratio is 2+ standard deviations away
+  </Accordion>
+  
+  <Accordion title="Fundamental Changes">
+    When news or events cause temporary mispricing:
+    - One bond has unusual selling pressure
+    - Liquidity differences create short-term dislocations
+  </Accordion>
+</AccordionGroup>
+
+### Exit Signals
+
+<AccordionGroup>
+  <Accordion title="Ratio Normalization">
+    Close when the ratio returns to its historical average or your target level.
+  </Accordion>
+  
+  <Accordion title="Profit Target">
+    Set a predetermined profit target (e.g., 2% of notional) and close when reached.
+  </Accordion>
+  
+  <Accordion title="Stop Loss">
+    Set a maximum loss threshold (e.g., -1% of notional) in case your hypothesis is wrong.
+  </Accordion>
+  
+  <Accordion title="Time-Based Exit">
+    Close after a certain period if the ratio hasn't moved as expected.
+  </Accordion>
+</AccordionGroup>
+
+## Risk Management
+
+### Key Risks
+
+<CardGroup cols={2}>
+  <Card title="Divergence Risk" icon="arrow-trend-up">
+    The ratio may continue diverging instead of reverting. Use stop losses.
+  </Card>
+  
+  <Card title="Structural Changes" icon="wrench">
+    Fundamental changes can permanently alter the ratio relationship.
+  </Card>
+  
+  <Card title="Liquidity Risk" icon="water">
+    One asset may become illiquid, making it hard to close positions.
+  </Card>
+  
+  <Card title="Execution Risk" icon="clock">
+    Prices move between opening the first and second leg of your trade.
+  </Card>
+</CardGroup>
+
+### Risk Mitigation Strategies
+
+<Steps>
+  <Step title="Start small">
+    Begin with smaller position sizes until you understand the ratio dynamics.
+  </Step>
+  
+  <Step title="Use stop losses">
+    Set maximum loss limits and honor them religiously.
+  </Step>
+  
+  <Step title="Monitor correlations">
+    Ensure the two assets remain fundamentally similar (same issuer, currency, etc.).
+  </Step>
+  
+  <Step title="Execute both legs quickly">
+    Minimize timing risk by executing buy and sell orders in rapid succession.
+  </Step>
+  
+  <Step title="Track your ratio thesis">
+    Regularly review why you entered. If fundamentals change, exit.
+  </Step>
+</Steps>
+
+## Beyond GD30/AL30
+
+### Other Bond Pairs
+
+The ratio strategy works for any similar asset pairs:
+
+- **AE38 / AL29:** Similar duration sovereign bonds
+- **GD35 / GD38:** Different maturities, same issuer
+- **Provincial bonds:** Pairs from the same province
+
+### Criteria for Good Pairs
+
+<Accordion title="What makes a good ratio pair?">
+  1. **Same issuer:** Reduces credit risk differences
+  2. **Similar maturity:** Reduces duration risk differences
+  3. **Same currency:** Eliminates FX risk
+  4. **High liquidity:** Enables easy entry/exit
+  5. **Stable relationship:** Historical ratio should show mean reversion
+  6. **Similar coupon structure:** Reduces cash flow timing differences
+</Accordion>
+
+## Practical Tips
+
+<CardGroup cols={2}>
+  <Card title="Keep a Ratio Watchlist" icon="list">
+    Track 3-5 pairs in TradingView. Set alerts at key ratio levels.
+  </Card>
+  
+  <Card title="Document Your Trades" icon="file-pen">
+    Record entry ratio, exit ratio, and P&L for each trade. Learn from patterns.
+  </Card>
+  
+  <Card title="Understand Seasonality" icon="calendar">
+    Some ratios have seasonal patterns (tax selling, coupon payments, etc.).
+  </Card>
+  
+  <Card title="Account for Costs" icon="coins">
+    Commissions and fees can eliminate small ratio profits. Ensure spreads are wide enough.
+  </Card>
+</CardGroup>
+
+## Common Mistakes to Avoid
+
+<Warning>
+**Mistake 1:** Trading equal nominals instead of equal dollar amounts
+- **Result:** Unwanted directional exposure
+- **Fix:** Always calculate nominals to match dollar amounts
+</Warning>
+
+<Warning>
+**Mistake 2:** Ignoring transaction costs
+- **Result:** Apparent profits become losses after fees
+- **Fix:** Calculate break-even ratio movement needed before entering
+</Warning>
+
+<Warning>
+**Mistake 3:** Not using stop losses
+- **Result:** Small losses become large losses
+- **Fix:** Set stop loss at 1-2% and honor it
+</Warning>
+
+<Warning>
+**Mistake 4:** Assuming mean reversion is guaranteed
+- **Result:** Holding losing positions too long
+- **Fix:** Reassess your thesis if the ratio continues diverging
+</Warning>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Arbitrage Strategies" icon="arrows-repeat" href="/guides/arbitrage-strategies">
+    Learn about settlement term arbitrage opportunities
+  </Card>
+  
+  <Card title="Understanding Settlement Terms" icon="calendar-days" href="/guides/understanding-settlement-terms">
+    Master CI, 24hs, and 48hs settlement mechanics
+  </Card>
+</CardGroup>

@@ -1,0 +1,114 @@
+---
+title: 'Primary API Setup'
+description: 'Configure the Primary API base URL for your broker'
+icon: 'link'
+---
+
+## Overview
+
+ChuchoBot connects to the Primary API (Matriz) provided by your broker (ALyC). Each broker has a unique API base URL that must be configured before you can use ChuchoBot.
+
+<Note>
+  ChuchoBot requires access to Primary API (Matriz) to function. If you don't have access to Matriz, you cannot use this application.
+</Note>
+
+## Configuration Method
+
+You can configure the Primary API base URL in two ways:
+
+### 1. Using the Login Window (Recommended)
+
+<Steps>
+  <Step title="Launch ChuchoBot">
+    Run `ChuchoBot.exe` from your installation directory.
+  </Step>
+  
+  <Step title="Enter API Base URL">
+    In the **Primary Login** window, replace the `Primary API Base URL` field with the URL provided by your broker.
+    
+    ![Login Window](/screenshots/Login.png)
+  </Step>
+  
+  <Step title="Enter Credentials">
+    Use the same username and password you use to access Matriz.
+  </Step>
+</Steps>
+
+### 2. Editing the Configuration File
+
+You can also manually edit the `ChuchoBot.exe.config` file:
+
+```xml
+<userSettings>
+  <Primary.WinFormsApp.Properties.Settings>
+    <setting name="ApiBaseUrl" serializeAs="String">
+      <value>https://api.cocos.xoms.com.ar</value>
+    </setting>
+  </Primary.WinFormsApp.Properties.Settings>
+</userSettings>
+```
+
+## Broker API URLs
+
+Use the appropriate API base URL for your broker:
+
+<Accordion title="Cocos Capital">
+  ```
+  https://api.cocos.xoms.com.ar
+  ```
+  <Warning>
+    Requires **Cocos Pro** plan (🥥)
+  </Warning>
+</Accordion>
+
+<Accordion title="Eco Valores">
+  ```
+  https://api.eco.xoms.com.ar
+  ```
+</Accordion>
+
+<Accordion title="Bull Market Brokers">
+  ```
+  https://api.bull.xoms.com.ar
+  ```
+</Accordion>
+
+<Accordion title="Veta Capital">
+  ```
+  https://api.veta.xoms.com.ar
+  ```
+</Accordion>
+
+<Accordion title="Cohen">
+  ```
+  https://api.cohen.xoms.com.ar
+  ```
+</Accordion>
+
+<Accordion title="Adcap">
+  ```
+  https://api.adcap.xoms.com.ar
+  ```
+</Accordion>
+
+<Accordion title="BCCH">
+  ```
+  https://api.bcch.xoms.com.ar
+  ```
+</Accordion>
+
+<Note>
+  For a complete list of brokers offering DMA access to Matriz, visit: [https://www.matbarofex.com.ar/agentes-dma](https://www.matbarofex.com.ar/agentes-dma)
+</Note>
+
+## Verification
+
+After configuring the API URL and logging in:
+
+1. The application should connect successfully
+2. You'll see market data streaming in real-time
+3. The WiFi icon should turn green when connected
+
+<Warning>
+  If the WiFi icon is red and shows "DISCONNECTED" during market hours, try restarting the application.
+</Warning>

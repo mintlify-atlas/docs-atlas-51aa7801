@@ -1,0 +1,517 @@
+---
+title: 'Real-Time Market Data'
+description: 'Live market data via WebSocket connection to Primary API for instant price updates'
+icon: 'signal'
+---
+
+## Overview
+
+ChuchoBot connects to Primary API via WebSocket to receive real-time market data for all monitored instruments. This live data feed powers all scanners, calculators, and arbitrage detection.
+
+<Info>
+**WebSocket Connection**: ChuchoBot maintains a persistent WebSocket connection to Primary API, receiving instant updates whenever prices, volumes, or order book depth changes.
+</Info>
+
+## How It Works
+
+### WebSocket Architecture
+
+```csharp
+public class MarketDataWebSocket : WebSocket<MarketDataInfo, MarketData>
+{
+    // Establishes persistent connection to Primary API
+    internal MarketDataWebSocket(Api api, 
+                                MarketDataInfo marketDataToRequest,
+                                CancellationToken cancelToken)
+    : base(api, marketDataToRequest, cancelToken)
+    {}
+}
+```
+
+### Data Flow
+
+<Steps>
+  <Step title="Authentication">
+    ChuchoBot authenticates with Primary API using your ALyC credentials
+  </Step>
+  <Step title="WebSocket Connection">
+    Establishes persistent WebSocket connection to the API endpoint
+  </Step>
+  <Step title="Instrument Subscription">
+    Subscribes to all configured instruments for real-time updates
+  </Step>
+  <Step title="Live Updates">
+    Receives instant push notifications when market data changes
+  </Step>
+  <Step title="Data Processing">
+    Updates all UI components, scanners, and calculators in real-time
+  </Step>
+</Steps>
+
+## Market Data Components
+
+The WebSocket feed provides comprehensive market data:
+
+### Price Data
+
+<CardGroup cols={2}>
+  <Card title="Last Price" icon="circle-dot">
+    Most recent executed trade price
+  </Card>
+  <Card title="Close Price" icon="clock">
+    Previous day's closing price
+  </Card>
+  <Card title="Open Price" icon="sunrise">
+    Today's opening price
+  </Card>
+  <Card title="High/Low" icon="chart-candlestick">
+    Today's trading range
+  </Card>
+</CardGroup>
+
+### Order Book Depth
+
+**Bids (Buy Orders)**
+- Top 5 bid levels with price and size
+- Represents demand at each price level
+- Used for sell price calculations
+
+**Offers (Sell Orders)**  
+- Top 5 offer levels with price and size
+- Represents supply at each price level
+- Used for buy price calculations
+
+```csharp
+public class Entries
+{
+    public Entry Last { get; set; }        // Last trade
+    public Entry Close { get; set; }       // Previous close
+    public Entry[] Bids { get; set; }      // Buy orders
+    public Entry[] Offers { get; set; }    // Sell orders
+    
+    public decimal GetTopBidPrice() => Bids?[0]?.Price ?? 0;
+    public decimal GetTopOfferPrice() => Offers?[0]?.Price ?? 0;
+    public decimal GetTopBidSize() => Bids?[0]?.Size ?? 0;
+    public decimal GetTopOfferSize() => Offers?[0]?.Size ?? 0;
+}
+```
+
+### Market Data Display
+
+The market data window shows live depth for any instrument:
+
+```csharp
+public void UpdateMarketData(Instrument instrument, Entries data)
+{
+    // Update last price and daily change
+    txtPrice.Text = data?.Last?.Price.ToString();
+    txtChange.Text = ((data?.Last?.Price / data?.Close?.Price - 1M) * 100)
+        .ToString();
+    
+    // Build order book display
+    for (int i = 0; i < 5; i++)
+    {
+        var bid = data?.Bids?.ElementAtOrDefault(i);
+        var offer = data?.Offers?.ElementAtOrDefault(i);
+        
+        // Display: BidSize | BidPrice | OfferPrice | OfferSize
+    }
+}
+```
+
+## Connection Status Indicator
+
+ChuchoBot displays the WebSocket connection status:
+
+### Connected (Green WiFi Icon)
+
+<Info>
+WebSocket is active and receiving data. All prices are real-time.
+</Info>
+
+**Indicates:**
+- Active WebSocket connection
+- Market is open
+- Receiving live updates
+
+### Disconnected (Red WiFi Icon)
+
+![Disconnected Status](/screenshots/Disconnected.png)
+
+<Warning>
+WebSocket connection lost. Prices may be stale.
+</Warning>
+
+**Common reasons:**
+- Market is closed (before 10:30 or after 17:00)
+- Network connectivity issue
+- Primary API temporary outage
+- Session expired
+
+**What to do:**
+- If during market hours: Close and restart ChuchoBot
+- If before/after market hours: Normal behavior
+- Check your internet connection
+
+## Market Hours
+
+WebSocket data is available only during market hours:
+
+### General Market (BYMA)
+
+- **Open**: 10:30 AM ART
+- **Close (without auction)**: 5:00 PM ART  
+- **Close (with auction)**: 4:57 PM ART
+
+### Immediate Settlement (CI)
+
+- **Open**: 10:30 AM ART
+- **Close (without auction)**: 5:00 PM ART
+- **Close (with auction)**: 4:57 PM ART
+
+<Note>
+Market hours are configurable in `ChuchoBot.exe.config` if they change.
+</Note>
+
+### Checking Market Status
+
+```csharp
+public static bool IsMarketOpen()
+{
+    var now = DateTime.Now.TimeOfDay;
+    var day = DateTime.Now.DayOfWeek;
+    
+    // Market closed on weekends
+    if (day == DayOfWeek.Saturday || day == DayOfWeek.Sunday)
+        return false;
+    
+    // Check if within market hours
+    return now >= MarketOpenTime && now <= MarketCloseTime;
+}
+```
+
+## Monitored Instruments
+
+Configure which instruments receive real-time data:
+
+### Adding Instruments
+
+1. **Configuración** → **Instrumentos a monitorear**
+2. Add one ticker per line:
+   ```
+   AL30
+   GD30
+   GGAL
+   NVDA
+   SPY
+   ```
+3. ChuchoBot automatically subscribes to all settlement terms:
+   - Ticker in CI (immediate)
+   - Ticker in 24hs
+   - TickerD (dollar MEP)
+   - TickerC (dollar CCL)
+
+![Monitored Instruments](/screenshots/InstrumentosMonitorear.png)
+
+### Auto-Generated Subscriptions
+
+For each base ticker (e.g., `AL30`), ChuchoBot subscribes to:
+
+```csharp
+public class TradedInstrumentWithSettlementTerms
+{
+    public InstrumentWithData T24 { get; set; }   // AL30 - 24hs
+    public InstrumentWithData TCI { get; set; }   // AL30 - CI
+}
+
+public class DolarTradedInstrument : TradedInstrumentWithSettlementTerms
+{
+    public TradedInstrumentWithSettlementTerms Dolar { get; set; }  // AL30D
+    public TradedInstrumentWithSettlementTerms Cable { get; set; }  // AL30C
+}
+```
+
+**Result**: Adding `AL30` subscribes to 6 instruments:
+- AL30 - CI
+- AL30 - 24hs
+- AL30D - CI
+- AL30D - 24hs
+- AL30C - CI
+- AL30C - 24hs
+
+## Data Update Mechanism
+
+### Event-Driven Updates
+
+All components subscribe to the market data event:
+
+```csharp
+public void FrmMarketData_Load(object sender, EventArgs e)
+{
+    // Subscribe to market data updates
+    Argentina.Data.OnMarketData += this.OnMarketData;
+}
+
+public void OnMarketData(Instrument instrument, Entries data)
+{
+    // Process incoming data
+    this.Invoke(new Action(() => this.UpdateMarketData(instrument, data)));
+}
+
+public void FrmMarketData_FormClosing(object sender, FormClosingEventArgs e)
+{
+    // Unsubscribe when closing
+    Argentina.Data.OnMarketData -= this.OnMarketData;
+}
+```
+
+### Update Frequency
+
+Market data updates are:
+- **Push-based**: No polling, instant updates when data changes
+- **Throttled by exchange**: BYMA controls update frequency
+- **Typically**: Multiple updates per second for liquid instruments
+- **Less frequent**: Illiquid instruments may update rarely
+
+## Performance Considerations
+
+### Efficient Data Handling
+
+<AccordionGroup>
+  <Accordion title="Selective Subscriptions">
+    Only subscribe to instruments you actively monitor. Each subscription consumes bandwidth and processing.
+  </Accordion>
+  <Accordion title="UI Thread Safety">
+    Market data updates use `Invoke()` to safely update UI from background threads.
+  </Accordion>
+  <Accordion title="Minimal Processing">
+    Updates are processed efficiently to maintain real-time responsiveness.
+  </Accordion>
+  <Accordion title="Automatic Refresh">
+    All scanners automatically refresh when underlying data updates—no manual refresh needed.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Connection Issues
+
+<AccordionGroup>
+  <Accordion title="Red WiFi Icon During Market Hours">
+    **Solution**: 
+    1. Check internet connection
+    2. Verify Primary API URL is correct
+    3. Close and restart ChuchoBot
+    4. Check if Primary API is operational (contact ALyC)
+  </Accordion>
+  <Accordion title="No Price Updates">
+    **Possible causes**:
+    - Instrument is not trading (check if market is open)
+    - Instrument ticker is incorrect
+    - Not subscribed to the instrument
+    
+    **Solution**: Verify ticker spelling and ensure it's in monitored list
+  </Accordion>
+  <Accordion title="Stale Prices">
+    **Indicators**:
+    - Prices not changing when market is active
+    - Last update timestamp is old
+    
+    **Solution**: Restart ChuchoBot to re-establish WebSocket
+  </Accordion>
+  <Accordion title="Frequent Disconnects">
+    **Possible causes**:
+    - Unstable internet connection
+    - Firewall blocking WebSocket
+    - VPN interference
+    
+    **Solution**: Check network stability, whitelist ChuchoBot in firewall
+  </Accordion>
+</AccordionGroup>
+
+### Data Quality Issues
+
+<AccordionGroup>
+  <Accordion title="Missing Bid/Offer Data">
+    Normal during:
+    - Pre-market (before 10:30)
+    - Auction periods
+    - Illiquid instruments
+    - Market halt
+    
+    Not concerning unless persistent during active trading.
+  </Accordion>
+  <Accordion title="Price Anomalies">
+    Rarely, you may see unusual prices due to:
+    - Fat-finger trades
+    - Market maker errors
+    - Halt/resume events
+    
+    Verify against broker platform before trading.
+  </Accordion>
+</AccordionGroup>
+
+## Data Consumption
+
+ChuchoBot is **view-only** and does NOT:
+- Send orders
+- Modify positions  
+- Execute trades
+- Submit quotes
+
+<Info>
+ChuchoBot only consumes market data for analysis and opportunity detection. All actual trading must be done through your broker's platform.
+</Info>
+
+## Real-Time vs Delayed Data
+
+Primary API provides:
+- **Real-time data** for authenticated users
+- **No delay** - instant push updates
+- **Full order book depth** (top 5 levels)
+
+<Note>
+Unlike many market data vendors, Primary API gives real-time data to all authenticated users at no additional cost.
+</Note>
+
+## Security Considerations
+
+### Credentials
+
+Your ALyC username and password are:
+- **Stored locally** in ChuchoBot settings
+- **Transmitted securely** via HTTPS to Primary API  
+- **Never shared** with third parties
+- **Same credentials** used for Matriz platform
+
+### Network Security
+
+- All communication uses **TLS/SSL encryption**
+- WebSocket connection is **wss:// (secure)**
+- No data transmitted in plaintext
+
+<Warning>
+Use ChuchoBot only on trusted networks. Avoid public WiFi when accessing market data with your credentials.
+</Warning>
+
+## Advanced: Market Data API
+
+For developers interested in the underlying API:
+
+### WebSocket Endpoint
+
+The Primary API WebSocket endpoint varies by ALyC:
+```
+wss://{api-base-url}/ws/marketdata
+
+Examples:
+- Bull Market: wss://api.bull.xoms.com.ar/ws/marketdata
+- Cocos Capital: wss://api.cocos.xoms.com.ar/ws/marketdata  
+- Eco Valores: wss://api.eco.xoms.com.ar/ws/marketdata
+```
+
+### Message Format
+
+Market data messages are JSON-formatted:
+```json
+{
+  "instrumentId": {
+    "marketId": "BCBA",
+    "symbol": "AL30 - 24hs"
+  },
+  "last": { "price": 55000, "size": 100 },
+  "close": { "price": 54500 },
+  "bids": [
+    { "price": 54950, "size": 500 },
+    { "price": 54900, "size": 1000 }
+  ],
+  "offers": [
+    { "price": 55050, "size": 300 },
+    { "price": 55100, "size": 800 }
+  ]
+}
+```
+
+## Configuring Market Hours
+
+Edit `ChuchoBot.exe.config` to adjust market hours:
+
+```xml
+<applicationSettings>
+  <Primary.WinFormsApp.Properties.Settings>
+    <!-- General Market Hours -->
+    <setting name="MarketOpenTime" serializeAs="String">
+      <value>10:30:00</value>
+    </setting>
+    <setting name="MarketCloseTime" serializeAs="String">
+      <value>17:00:00</value>
+    </setting>
+    <setting name="MarketCloseTimeWithAuction" serializeAs="String">
+      <value>16:57:00</value>
+    </setting>
+    
+    <!-- CI Market Hours -->
+    <setting name="CIOpenTime" serializeAs="String">
+      <value>10:30:00</value>
+    </setting>
+    <setting name="CICloseTime" serializeAs="String">
+      <value>17:00:00</value>
+    </setting>
+    <setting name="CICloseTimeWithAuction" serializeAs="String">
+      <value>16:57:00</value>
+    </setting>
+  </Primary.WinFormsApp.Properties.Settings>
+</applicationSettings>
+```
+
+<Note>
+Only modify these if BYMA officially changes market hours. Incorrect settings can cause connection issues.
+</Note>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Monitor Connection Status">
+    Always check the WiFi icon before trusting displayed prices. Red = stale data.
+  </Accordion>
+  <Accordion title="Restart on Disconnect">
+    If disconnected during market hours, restart ChuchoBot immediately to restore the feed.
+  </Accordion>
+  <Accordion title="Verify Critical Prices">
+    Before executing large trades, verify prices against your broker's platform.
+  </Accordion>
+  <Accordion title="Limit Monitored Instruments">
+    Only add instruments you actively trade. Too many subscriptions can impact performance.
+  </Accordion>
+  <Accordion title="Use Stable Network">
+    WebSocket connections are sensitive to network instability. Use wired connection if possible.
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+Real-time market data powers all ChuchoBot features:
+
+<CardGroup cols={2}>
+  <Card title="Settlement Arbitrage" icon="calendar-days" href="/features/settlement-arbitrage">
+    Uses real-time bid/offer for arbitrage detection
+  </Card>
+  <Card title="Dollar MEP/CCL" icon="dollar-sign" href="/features/dollar-mep-ccl">
+    Calculates exchange rates from live market data
+  </Card>
+  <Card title="Bond Ratios" icon="chart-line" href="/features/bond-ratios">
+    Tracks relative pricing in real-time
+  </Card>
+  <Card title="Caucion Calculator" icon="calculator" href="/features/caucion-calculator">
+    Uses live caucion rates for accurate calculations
+  </Card>
+</CardGroup>
+
+## Technical Reference
+
+Real-time market data is implemented in:
+- `MarketDataWebSocket.cs` - WebSocket connection management
+- `FrmMarketData.cs` - Market data display window
+- `InstrumentWithData.cs` - Instrument data container
+- `Entries.cs` - Market data entry structure
+- `Argentina.cs` - Market hours and status checking

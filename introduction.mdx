@@ -1,0 +1,121 @@
+---
+title: Introduction
+description: Real-time arbitrage detection and dollar MEP/CCL calculator for the Argentine financial market
+---
+
+# ChuchoBot
+
+ChuchoBot is a Windows desktop application designed for the Argentine financial market that provides real-time arbitrage detection, dollar MEP/CCL price calculations, bond ratios, and caucion opportunities.
+
+The application connects to the Primary API (Matriz platform) via WebSocket to receive live market data and automatically detects profitable trading opportunities across different settlement terms, instruments, and currency exchanges.
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Download and install ChuchoBot on your Windows system
+  </Card>
+  <Card
+    title="Quick start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get started with your first arbitrage scan in minutes
+  </Card>
+  <Card
+    title="Features"
+    icon="star"
+    href="#key-features"
+  >
+    Explore the main features and capabilities
+  </Card>
+  <Card
+    title="Configuration"
+    icon="gear"
+    href="/quickstart#configuration"
+  >
+    Configure instruments, market fees, and trading hours
+  </Card>
+</CardGroup>
+
+## Key features
+
+ChuchoBot provides six main features for Argentine market traders:
+
+### Settlement term arbitrage scanner
+
+Automatically detects arbitrage opportunities between different settlement terms (CI, 24hs, 48hs) for the same instrument. The scanner calculates profit/loss including market fees, commissions, and caucion rates.
+
+**Use cases:**
+- Sell in CI and buy in 24hs (requires holding the instrument)
+- Buy in CI and sell in 24hs (requires capital or caucion)
+
+### Dollar MEP calculator
+
+Real-time calculator showing the best instruments to buy or sell dollar MEP (Mercado Electrónico de Pagos). The application compares prices across all configured instruments and displays them sorted by profitability.
+
+### Dollar CCL calculator
+
+Real-time calculator for dollar CCL (Contado Con Liquidación) transactions, showing which instruments offer the best exchange rates for buying or selling foreign currency.
+
+### Bond ratio analyzer
+
+Visualize and analyze the ratio between two bonds (e.g., GD30/AL30) to identify rotation opportunities. The tool calculates the nominal amounts needed to maintain equal monetary exposure when rotating between instruments.
+
+### Caucion calculator
+
+Calculates returns for caucion operations (short-term money market lending) with configurable borrowing and lending commission rates (TNA).
+
+### Real-time market data
+
+WebSocket connection to Primary API provides live updates for:
+- Bid/offer prices
+- Last traded prices
+- Market depth
+- Trade volume
+- Connection status indicator
+
+## System requirements
+
+<Info>
+ChuchoBot only runs on Windows operating systems. It does not support iOS, macOS, Android, or Linux.
+</Info>
+
+**Minimum requirements:**
+- **Operating system:** Windows 7 or later
+- **.NET Framework:** 4.7.2 or higher
+- **Primary API access:** Active account with an ALyC (Agent de Liquidación y Compensación) that provides Matriz platform access
+- **Internet connection:** Required for real-time market data
+
+**Supported brokers:**
+
+Any broker that provides Primary API access through the Matriz platform, including:
+- Cocos Capital (requires Cocos Pro plan)
+- Eco Valores
+- Veta Capital
+- Bull Market Brokers
+- Cohen
+- Adcap
+- BCCH
+
+<Note>
+View the complete list of brokers offering DMA access at [https://www.matbarofex.com.ar/agentes-dma](https://www.matbarofex.com.ar/agentes-dma)
+</Note>
+
+## How it works
+
+1. **Authentication:** Log in using your Matriz credentials and broker's Primary API base URL
+2. **WebSocket connection:** Establishes real-time connection to receive market data
+3. **Instrument monitoring:** Configure which instruments to monitor (stocks, bonds, CEDEARs, letters)
+4. **Automatic scanning:** Continuously analyzes market data to detect arbitrage opportunities
+5. **Visual alerts:** Displays opportunities with calculated P&L including all fees and commissions
+
+<Warning>
+ChuchoBot is a monitoring and analysis tool only. It does **not** automatically place orders or execute trades on your behalf.
+</Warning>
+
+## Get started
+
+Ready to start detecting arbitrage opportunities? Follow the [installation guide](/installation) to download and set up ChuchoBot, then proceed to the [quick start guide](/quickstart) to configure your first scan.

@@ -1,0 +1,197 @@
+---
+title: 'Arbitrage Strategies'
+description: 'Learn how to identify and execute arbitrage opportunities across different settlement terms'
+icon: 'arrows-repeat'
+---
+
+## What is Settlement Term Arbitrage?
+
+Settlement term arbitrage involves taking advantage of price differences between the same asset trading with different settlement periods (CI, 24hs, 48hs). ChuchoBot's scanner detects these opportunities in real-time, calculating potential profit after commissions and market fees.
+
+<Tip>
+Watch this video for a detailed explanation: [https://www.youtube.com/watch?v=i0xQ3_KqdHI](https://www.youtube.com/watch?v=i0xQ3_KqdHI)
+</Tip>
+
+## When to Use Each Strategy
+
+There are two main arbitrage scenarios depending on which settlement term you sell first:
+
+### Strategy 1: Sell Short-Term, Buy Long-Term
+
+**Requirements:** You must own the asset in your portfolio
+
+**When to use:** When the short-term settlement (CI) has a higher price than the long-term settlement (24hs or 48hs)
+
+**Example:** `1 Sell NVDA - CI` / `2 Buy NVDA - 24hs`
+
+<Steps>
+  <Step title="Sell the asset in the shorter settlement period">
+    Execute the sell order in CI settlement. This generates cash that settles immediately.
+  </Step>
+  
+  <Step title="Buy the asset in the longer settlement period">
+    Execute the buy order in 24hs settlement. This replenishes your position with deferred payment.
+  </Step>
+  
+  <Step title="Place the proceeds in cauciones (repo)">
+    Take the cash from step 1 and place it in cauciones to earn interest while waiting for the buy settlement.
+  </Step>
+</Steps>
+
+<Note>
+You capture the price spread between settlement terms while earning repo interest on the cash proceeds.
+</Note>
+
+### Strategy 2: Buy Short-Term, Sell Long-Term
+
+**Requirements:** You need available cash or ability to borrow via cauciones
+
+**When to use:** When the long-term settlement (24hs or 48hs) has a higher price than the short-term settlement (CI)
+
+**Example:** `1 Sell SPY - 24hs` / `2 Buy SPY - CI`
+
+<Steps>
+  <Step title="Buy the asset in the shorter settlement period">
+    Execute the buy order in CI settlement. This requires immediate payment.
+  </Step>
+  
+  <Step title="Sell the asset in the longer settlement period">
+    Execute the sell order in 24hs settlement. This locks in a higher sale price with deferred receipt.
+  </Step>
+  
+  <Step title="Borrow via cauciones tomadoras">
+    Take cauciones for the total amount of the purchase from step 1 to cover the immediate cash requirement.
+  </Step>
+</Steps>
+
+<Warning>
+This strategy requires borrowing capacity. Ensure you configure the correct borrowing commission (TNA) in ChuchoBot for accurate P&L calculations.
+</Warning>
+
+## Using ChuchoBot's Arbitrage Scanner
+
+The settlement arbitrage scanner provides real-time detection of opportunities:
+
+### Scanner Features
+
+- **Real-time monitoring** via WebSocket connection to Primary API
+- **Automatic P&L calculation** including commissions and market fees
+- **Portfolio-based filtering** to show only opportunities for assets you own
+- **Profit filtering** to display only positive P&L opportunities
+
+### Accessing Arbitrage Details
+
+<Accordion title="How to analyze a specific arbitrage opportunity">
+  1. Double-click any row in the scanner grid
+  2. The detail window opens with full calculation breakdown
+  3. Adjust nominals, prices, and commission rates to simulate scenarios
+  4. View approximate profit/loss for the complete operation
+</Accordion>
+
+### Opening Arbitrage for Specific Instruments
+
+You can manually open the arbitrage window for any instrument:
+
+1. Click menu `Arbitrajes de Plazos` > `Seleccionar instrumento y Plazos`
+2. Select the instrument
+3. Choose buy settlement period
+4. Choose sell settlement period
+
+## Calculation Example
+
+Let's walk through a real arbitrage calculation:
+
+**Scenario:** NVDA trading at different prices across settlement terms
+- NVDA CI (sell): $50,000 per share
+- NVDA 24hs (buy): $49,500 per share
+- You own 100 shares of NVDA
+
+**Operation:**
+
+<Steps>
+  <Step title="Sell 100 NVDA in CI">
+    - Gross proceeds: 100 × $50,000 = $5,000,000
+    - Commission (0.10%): $5,000
+    - Market fees (0.08%): $4,000
+    - Net proceeds: $4,991,000
+  </Step>
+  
+  <Step title="Buy 100 NVDA in 24hs">
+    - Gross cost: 100 × $49,500 = $4,950,000
+    - Commission (0.10%): $4,950
+    - Market fees (0.08%): $3,960
+    - Net cost: $4,958,910
+  </Step>
+  
+  <Step title="Place proceeds in cauciones">
+    - Amount: $4,991,000
+    - Period: 1 day
+    - Assuming 30% TNA
+    - Interest earned: ~$4,102
+  </Step>
+  
+  <Step title="Calculate final P&L">
+    - Net proceeds from sale: $4,991,000
+    - Net cost of purchase: $4,958,910
+    - Repo interest: $4,102
+    - **Total profit: $36,192**
+  </Step>
+</Steps>
+
+<Note>
+ChuchoBot performs these calculations automatically in real-time, accounting for your configured commission rates and market fees.
+</Note>
+
+## Configuration Tips
+
+### Setting Commission Rates
+
+For accurate P&L calculations, configure:
+
+- **Trading commission:** Default 0.10% (adjustable in arbitrage window)
+- **Cauciones tomadora commission (TNA):** Set in scanner window
+- **Cauciones colocadora commission (TNA):** Set in scanner window
+
+### Market Fees by Instrument Type
+
+ChuchoBot automatically applies correct market fees:
+
+- **Stocks and CEDEARs:** 0.08%
+- **Treasury letters (Letras):** 0.001%
+- **Bonds:** 0.01%
+
+<Tip>
+Refer to BYMA's official market fees: [https://www.byma.com.ar/wp-content/uploads/dlm_uploads/2019/11/BYMA-Derechos-Mercado-sobre-Operaciones-2022-12-01.pdf](https://www.byma.com.ar/wp-content/uploads/dlm_uploads/2019/11/BYMA-Derechos-Mercado-sobre-Operaciones-2022-12-01.pdf)
+</Tip>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Monitor Portfolio Requirements" icon="wallet">
+    Strategy 1 requires owning the asset. Filter by portfolio to see only actionable opportunities.
+  </Card>
+  
+  <Card title="Configure Accurate Commissions" icon="percent">
+    Set your broker's actual commission rates for precise P&L calculations.
+  </Card>
+  
+  <Card title="Check Market Hours" icon="clock">
+    Arbitrage opportunities are only executable during market hours (10:30-17:00 by default).
+  </Card>
+  
+  <Card title="Consider Execution Risk" icon="triangle-exclamation">
+    Prices change rapidly. Execute both legs quickly to lock in the spread.
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Understanding Settlement Terms" icon="calendar-days" href="/guides/understanding-settlement-terms">
+    Learn about CI, 24hs, and 48hs settlement periods
+  </Card>
+  
+  <Card title="Asset Rotation Strategies" icon="arrows-rotate" href="/guides/asset-rotation">
+    Explore ratio-based trading strategies
+  </Card>
+</CardGroup>

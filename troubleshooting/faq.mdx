@@ -1,0 +1,160 @@
+---
+title: "Frequently Asked Questions"
+description: "Common questions and answers about ChuchoBot functionality"
+---
+
+## General Questions
+
+<Accordion title="Does ChuchoBot receive real-time data?">
+Yes, ChuchoBot connects to Primary API via WebSocket and receives real-time instrument data during market hours.
+
+The application streams live market data including:
+- Real-time prices for monitored instruments
+- Bid/ask spreads
+- Market depth information
+- Order book updates
+
+Data is updated continuously while the market is open and the WebSocket connection is active (green WiFi icon).
+</Accordion>
+
+<Accordion title="Does ChuchoBot send buy or sell orders to the market?">
+No, ChuchoBot does NOT send or execute any buy or sell orders to the market.
+
+The application is designed exclusively for:
+- Visualizing arbitrage opportunities in real-time
+- Analyzing settlement term spreads
+- Monitoring MEP and CCL dollar rates
+- Calculating potential profit/loss scenarios
+
+All trading decisions and order execution must be done manually by the user through their broker's platform.
+</Accordion>
+
+<Accordion title="Can I use ChuchoBot without Primary API access?">
+No, ChuchoBot requires access to Primary API (Matriz) provided by your ALyC (broker).
+
+<Warning>
+The application cannot function without Primary API credentials and access.
+</Warning>
+
+To obtain Primary API access:
+1. Contact your broker (ALyC) to request access
+2. Verify your broker supports Matriz/Primary API integration
+3. Check the [list of brokers offering DMA access](https://www.matbarofex.com.ar/agentes-dma)
+
+Popular brokers with Primary API support include:
+- Cocos Capital (requires Cocos Pro plan)
+- Eco Valores
+- Veta Capital
+- Bull Market Brokers
+- Cohen
+- Adcap
+- BCCH
+</Accordion>
+
+## Configuration Questions
+
+<Accordion title="How do I configure D or C instruments that don't follow the standard naming convention?">
+Some instruments use non-standard tickers for D (MEP dollar) and C (CCL dollar) instruments.
+
+**Example**: For treasury letter `X20Y4`, the D ticker is `XY4D` and C ticker is `XY4C` (not `X20Y4D` and `X20Y4C`).
+
+**To configure exceptions**:
+
+1. Go to menu `Configuración` > `Excepciones de instrumentos $;D;C`
+2. Enter the exception using the format: `{Ticker $ Pesos};{Ticker D MEP};{Ticker C CCL}`
+3. Separate each ticker with semicolons (`;`)
+
+**Example configuration**:
+```
+X20Y4;XY4D;XY4C
+```
+
+<Info>
+This allows ChuchoBot to correctly identify and track D and C instruments that have irregular naming patterns.
+</Info>
+</Accordion>
+
+<Accordion title="How do I disable Telemetry?">
+To disable telemetry data collection in ChuchoBot:
+
+1. Close the application
+2. Open `ChuchoBot.exe.config` in a text editor
+3. Locate and delete the entire `<connectionStrings>...</connectionStrings>` section:
+
+```xml
+<connectionStrings>
+  <add name="Primary.WinFormsApp.Properties.Settings.AppInsightsConnectionString"
+    connectionString="..." />
+</connectionStrings>
+```
+
+4. Save the file
+5. Restart ChuchoBot
+
+<Note>
+Removing the connection string will prevent the application from sending any telemetry data.
+</Note>
+</Accordion>
+
+<Accordion title="What are the login credentials for ChuchoBot?">
+Use the same username and password that you use to access Matriz.
+
+ChuchoBot authenticates through Primary API using your existing Matriz credentials. There are no separate credentials to create or manage.
+</Accordion>
+
+<Accordion title="What is the Primary API Base URL for my broker?">
+The Primary API Base URL depends on your ALyC (broker). Configure it in the **Primary Login** window.
+
+**Common Primary API URLs**:
+
+- **Cocos Capital** (requires Cocos Pro plan): `https://api.cocos.xoms.com.ar`
+- **Eco Valores**: `https://api.eco.xoms.com.ar`
+- **Veta Capital**: `https://api.veta.xoms.com.ar`
+- **Bull Market Brokers**: `https://api.bull.xoms.com.ar`
+- **Cohen**: `https://api.cohen.xoms.com.ar`
+- **Adcap**: `https://api.adcap.xoms.com.ar`
+- **BCCH**: `https://api.bcch.xoms.com.ar`
+
+<Info>
+If your broker is not listed, contact them directly for the correct Primary API Base URL.
+</Info>
+</Accordion>
+
+## Technical Questions
+
+<Accordion title="What is settlement term arbitrage?">
+Settlement term arbitrage involves exploiting price differences between the same instrument trading at different settlement periods (CI, 24hs, 48hs).
+
+**Learn more**:
+- Watch the explanation video: [Settlement Term Arbitrage on YouTube](https://www.youtube.com/watch?v=i0xQ3_KqdHI)
+- See the [Settlement Term Arbitrage Scanner](/features/settlement-arbitrage) documentation
+
+**Example**:
+- Buy NVDA at CI (immediate settlement) at $100
+- Sell NVDA at 24hs (next-day settlement) at $100.50
+- Profit from the settlement spread while managing collateral requirements
+</Accordion>
+
+<Accordion title="How do I configure market fees (Derechos de Mercado) for different instruments?">
+ChuchoBot has pre-configured market fees for common instrument types:
+
+- **Stocks and CEDEARs**: 0.08% (instruments in `AccionesCEDEARs` setting)
+- **Treasury Letters**: 0.001% (instruments in `Letras` setting)
+- **Bonds**: 0.01% (all other instruments)
+
+The default commission per operation is 0.10%, which can be modified in the Settlement Term Arbitrage window.
+
+<Note>
+Reference: [BYMA Market Fees (PDF)](https://www.byma.com.ar/wp-content/uploads/dlm_uploads/2019/11/BYMA-Derechos-Mercado-sobre-Operaciones-2022-12-01.pdf)
+</Note>
+</Accordion>
+
+<Accordion title="How do I add or remove instruments to monitor?">
+1. Go to `Configuración` > `Instrumentos a monitorear`
+2. Add or remove instruments from the list (one instrument per line)
+3. Save your changes
+
+**Example**: Add `GGAL` to monitor Banco Galicia stock.
+
+Each instrument you add will be monitored for real-time price updates and included in arbitrage opportunity scans.
+</Accordion>

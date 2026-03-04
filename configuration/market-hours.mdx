@@ -1,0 +1,154 @@
+---
+title: 'Market Hours'
+description: 'Configure market operating hours for ChuchoBot'
+icon: 'clock'
+---
+
+## Overview
+
+ChuchoBot uses market hours configuration to determine when the market is open and to properly display connection status. The application supports different hours for the general market and the Immediate Settlement (CI) market.
+
+## Configuration File
+
+Market hours are configured in the `ChuchoBot.exe.config` file under the `<applicationSettings>` section.
+
+### Editing Market Hours
+
+<Steps>
+  <Step title="Locate the config file">
+    Find `ChuchoBot.exe.config` in your ChuchoBot installation directory.
+  </Step>
+  
+  <Step title="Open in text editor">
+    Open the file with a text editor (Notepad, VS Code, etc.).
+  </Step>
+  
+  <Step title="Find applicationSettings section">
+    Locate the `<applicationSettings>` section within `<Primary.WinFormsApp.Properties.Settings>`.
+  </Step>
+  
+  <Step title="Modify time values">
+    Edit the time values using the format `HH:MM:SS` (24-hour format).
+  </Step>
+  
+  <Step title="Save and restart">
+    Save the file and restart ChuchoBot for changes to take effect.
+  </Step>
+</Steps>
+
+## General Market Hours
+
+These settings control the standard market operating hours:
+
+```xml
+<setting name="MarketOpenTime" serializeAs="String">
+  <value>10:30:00</value>
+</setting>
+<setting name="MarketCloseTime" serializeAs="String">
+  <value>17:00:00</value>
+</setting>
+<setting name="MarketCloseTimeWithAuction" serializeAs="String">
+  <value>16:57:00</value>
+</setting>
+```
+
+<Accordion title="MarketOpenTime">
+  **Default:** `10:30:00`
+  
+  The time when the market opens for trading.
+</Accordion>
+
+<Accordion title="MarketCloseTime">
+  **Default:** `17:00:00`
+  
+  The time when the market closes without considering the closing auction.
+</Accordion>
+
+<Accordion title="MarketCloseTimeWithAuction">
+  **Default:** `16:57:00`
+  
+  The effective market close time when the closing auction is included. The closing auction typically runs from 16:57 to 17:00.
+</Accordion>
+
+## Immediate Settlement (CI) Market Hours
+
+The CI (Contado Inmediato) market can have different operating hours:
+
+```xml
+<setting name="CIOpenTime" serializeAs="String">
+  <value>10:30:00</value>
+</setting>
+<setting name="CICloseTime" serializeAs="String">
+  <value>17:00:00</value>
+</setting>
+<setting name="CICloseTimeWithAuction" serializeAs="String">
+  <value>16:57:00</value>
+</setting>
+```
+
+<Accordion title="CIOpenTime">
+  **Default:** `10:30:00`
+  
+  The time when the CI market opens.
+</Accordion>
+
+<Accordion title="CICloseTime">
+  **Default:** `17:00:00`
+  
+  The time when the CI market closes without auction.
+</Accordion>
+
+<Accordion title="CICloseTimeWithAuction">
+  **Default:** `16:57:00`
+  
+  The CI market close time including the closing auction.
+</Accordion>
+
+## Connection Status Indicator
+
+ChuchoBot uses these market hours to control the connection status:
+
+- **Green WiFi icon:** Connected and market is open
+- **Red WiFi icon ("DISCONNECTED"):** Either disconnected OR outside market hours
+
+<Note>
+  It's normal to see the red WiFi icon before market open and after market close.
+</Note>
+
+![Disconnected Status](/screenshots/Disconnected.png)
+
+<Warning>
+  If you see "DISCONNECTED" during configured market hours, try restarting ChuchoBot.
+</Warning>
+
+## Example Configuration
+
+Complete market hours section in `ChuchoBot.exe.config`:
+
+```xml
+<applicationSettings>
+  <Primary.WinFormsApp.Properties.Settings>
+    <!-- General Market Hours -->
+    <setting name="MarketOpenTime" serializeAs="String">
+      <value>10:30:00</value>
+    </setting>
+    <setting name="MarketCloseTime" serializeAs="String">
+      <value>17:00:00</value>
+    </setting>
+    <setting name="MarketCloseTimeWithAuction" serializeAs="String">
+      <value>16:57:00</value>
+    </setting>
+    
+    <!-- CI Market Hours -->
+    <setting name="CIOpenTime" serializeAs="String">
+      <value>10:30:00</value>
+    </setting>
+    <setting name="CICloseTime" serializeAs="String">
+      <value>17:00:00</value>
+    </setting>
+    <setting name="CICloseTimeWithAuction" serializeAs="String">
+      <value>16:57:00</value>
+    </setting>
+  </Primary.WinFormsApp.Properties.Settings>
+</applicationSettings>
+```

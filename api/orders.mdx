@@ -1,0 +1,437 @@
+---
+title: 'Orders'
+description: 'Submit, manage, and query orders on the Primary exchange'
+---
+
+## Submit Order
+
+Submit a new order to the exchange.
+
+```csharp
+public async Task<OrderId> SubmitOrder(string account, Order order)
+```
+
+### Parameters
+
+<ParamField path="account" type="string" required>
+  Account identifier to submit the order from (e.g., `Api.DemoAccount` = "REM2046")
+</ParamField>
+
+<ParamField path="order" type="Order" required>
+  Order object containing all order parameters
+</ParamField>
+
+### Order Properties
+
+<ParamField path="Instrument" type="Instrument" required>
+  The instrument to trade
+</ParamField>
+
+<ParamField path="Side" type="Side" required>
+  Order side: `Side.Buy` or `Side.Sell`
+</ParamField>
+
+<ParamField path="Quantity" type="int" required>
+  Order quantity/size
+</ParamField>
+
+<ParamField path="Type" type="Type" required>
+  Order type: `Type.Market` or `Type.Limit`
+</ParamField>
+
+<ParamField path="Price" type="decimal?">
+  Limit price (required for limit orders, null for market orders)
+</ParamField>
+
+<ParamField path="Expiration" type="Expiration" required>
+  Time in force: `Day`, `ImmediateOrCancel`, `FillOrKill`, or `GoodTillDate`
+</ParamField>
+
+<ParamField path="ExpirationDate" type="DateTime">
+  Expiration date (required when `Expiration` is `GoodTillDate`)
+</ParamField>
+
+<ParamField path="CancelPrevious" type="bool" default="false">
+  Cancel previous orders for this instrument before submitting
+</ParamField>
+
+<ParamField path="Iceberg" type="bool" default="false">
+  Submit as iceberg order (hidden quantity)
+</ParamField>
+
+<ParamField path="DisplayQuantity" type="uint">
+  Visible quantity for iceberg orders (required when `Iceberg` is true)
+</ParamField>
+
+### Response
+
+Returns an `OrderId` object:
+
+<ResponseField name="ClientOrderId" type="string">
+  Client-side order identifier
+</ResponseField>
+
+<ResponseField name="Proprietary" type="string">
+  Exchange-assigned proprietary order identifier
+</ResponseField>
+
+### Example: Simple Limit Order
+
+```csharp
+using Primary;
+using Primary.Data;
+using Primary.Data.Orders;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get instrument
+var instruments = await api.GetAllInstruments();
+var instrument = instruments.First();
+
+// Create limit order
+var order = new Order
+{
+    Instrument = instrument,
+    Side = Side.Buy,
+    Quantity = 100,
+    Price = 150.50m,
+    Type = Type.Limit,
+    Expiration = Expiration.Day
+};
+
+try
+{
+    var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+    Console.WriteLine($"Order submitted successfully!");
+    Console.WriteLine($"Client Order ID: {orderId.ClientOrderId}");
+    Console.WriteLine($"Proprietary ID: {orderId.Proprietary}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Order failed: {ex.Message}");
+}
+```
+
+### Example: Market Order
+
+```csharp
+var order = new Order
+{
+    Instrument = instrument,
+    Side = Side.Sell,
+    Quantity = 50,
+    Price = null, // No price for market orders
+    Type = Type.Market,
+    Expiration = Expiration.ImmediateOrCancel
+};
+
+var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+```
+
+### Example: Iceberg Order
+
+```csharp
+var order = new Order
+{
+    Instrument = instrument,
+    Side = Side.Buy,
+    Quantity = 1000,
+    Price = 148.25m,
+    Type = Type.Limit,
+    Expiration = Expiration.Day,
+    Iceberg = true,
+    DisplayQuantity = 100 // Only show 100, hide remaining 900
+};
+
+var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+```
+
+### Example: Good Till Date Order
+
+```csharp
+var order = new Order
+{
+    Instrument = instrument,
+    Side = Side.Buy,
+    Quantity = 200,
+    Price = 145.00m,
+    Type = Type.Limit,
+    Expiration = Expiration.GoodTillDate,
+    ExpirationDate = DateTime.Today.AddDays(7) // Expires in 7 days
+};
+
+var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+```
+
+## Get Order Status
+
+Retrieve the current status and details of an order.
+
+```csharp
+public async Task<OrderStatus> GetOrderStatus(OrderId orderId)
+```
+
+### Parameters
+
+<ParamField path="orderId" type="OrderId" required>
+  The order identifier returned from `SubmitOrder`
+</ParamField>
+
+### Response
+
+Returns an `OrderStatus` object with all order details:
+
+<ResponseField name="Id" type="string">
+  Exchange order identifier
+</ResponseField>
+
+<ResponseField name="Status" type="Status">
+  Current order status: `New`, `PendingNew`, `Rejected`, `Cancelled`, `PendingCancel`, `PartiallyFilled`, or `Filled`
+</ResponseField>
+
+<ResponseField name="StatusText" type="string">
+  Additional status information/description
+</ResponseField>
+
+<ResponseField name="Account" type="AccountId">
+  Account information
+</ResponseField>
+
+<ResponseField name="ExecutionId" type="string">
+  Execution identifier
+</ResponseField>
+
+<ResponseField name="TransactionTime" type="DateTime">
+  Transaction timestamp
+</ResponseField>
+
+<ResponseField name="AveragePrice" type="decimal">
+  Average fill price
+</ResponseField>
+
+<ResponseField name="LastPrice" type="decimal">
+  Last fill price
+</ResponseField>
+
+<ResponseField name="LastQuantity" type="uint">
+  Quantity filled in last execution
+</ResponseField>
+
+<ResponseField name="CumulativeQuantity" type="uint">
+  Total quantity filled so far
+</ResponseField>
+
+<ResponseField name="LeavesQuantity" type="uint">
+  Remaining unfilled quantity
+</ResponseField>
+
+### Example
+
+```csharp
+// Submit order
+var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+
+// Wait a moment
+await Task.Delay(1000);
+
+// Get order status
+var status = await api.GetOrderStatus(orderId);
+
+Console.WriteLine($"Order Status: {status.Status}");
+Console.WriteLine($"Filled: {status.CumulativeQuantity}/{order.Quantity}");
+Console.WriteLine($"Average Price: {status.AveragePrice}");
+Console.WriteLine($"Remaining: {status.LeavesQuantity}");
+Console.WriteLine($"Details: {status.StatusText}");
+```
+
+### Monitor Order Until Filled
+
+```csharp
+var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+
+while (true)
+{
+    var status = await api.GetOrderStatus(orderId);
+    
+    Console.WriteLine($"Status: {status.Status}, Filled: {status.CumulativeQuantity}/{order.Quantity}");
+    
+    if (status.Status == Status.Filled || 
+        status.Status == Status.Cancelled || 
+        status.Status == Status.Rejected)
+    {
+        break;
+    }
+    
+    await Task.Delay(500);
+}
+```
+
+## Cancel Order
+
+Cancel an existing order.
+
+```csharp
+public async Task CancelOrder(OrderId orderId)
+```
+
+### Parameters
+
+<ParamField path="orderId" type="OrderId" required>
+  The order identifier to cancel
+</ParamField>
+
+### Example
+
+```csharp
+// Submit order
+var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+
+Console.WriteLine("Order submitted. Press Enter to cancel...");
+Console.ReadLine();
+
+// Cancel the order
+try
+{
+    await api.CancelOrder(orderId);
+    Console.WriteLine("Order cancelled successfully");
+    
+    // Verify cancellation
+    var status = await api.GetOrderStatus(orderId);
+    Console.WriteLine($"Final status: {status.Status}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Cancel failed: {ex.Message}");
+}
+```
+
+## Order Enums
+
+### Order Type
+
+```csharp
+public enum Type
+{
+    Market,  // Execute at current market price
+    Limit    // Execute at specified price or better
+}
+```
+
+### Order Side
+
+```csharp
+public enum Side
+{
+    Buy,   // Buy order
+    Sell   // Sell order
+}
+```
+
+### Order Expiration (Time in Force)
+
+```csharp
+public enum Expiration
+{
+    Day,                 // Valid until market close
+    ImmediateOrCancel,   // Fill immediately or cancel
+    FillOrKill,          // Fill completely or cancel
+    GoodTillDate         // Valid until specified date
+}
+```
+
+### Order Status
+
+```csharp
+public enum Status
+{
+    New,              // Successfully submitted
+    PendingNew,       // Being processed
+    Rejected,         // Rejected by exchange
+    Cancelled,        // Cancelled
+    PendingCancel,    // Cancellation being processed
+    PartiallyFilled,  // Partially executed
+    Filled            // Completely executed
+}
+```
+
+## Complete Trading Example
+
+```csharp
+using Primary;
+using Primary.Data;
+using Primary.Data.Orders;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+class TradingBot
+{
+    static async Task Main()
+    {
+        var api = new Api(Api.DemoEndpoint);
+        await api.Login(Api.DemoUsername, Api.DemoPassword);
+        
+        // Get instrument
+        var instruments = await api.GetAllInstruments();
+        var instrument = instruments.First();
+        
+        // Get current market data
+        var marketData = await api.GetMarketData(instrument);
+        
+        if (marketData.Data.HasOffers())
+        {
+            decimal offerPrice = marketData.Data.GetTopOfferPrice();
+            
+            // Submit order at 1% below offer
+            var order = new Order
+            {
+                Instrument = instrument,
+                Side = Side.Buy,
+                Quantity = 10,
+                Price = offerPrice * 0.99m,
+                Type = Type.Limit,
+                Expiration = Expiration.Day
+            };
+            
+            Console.WriteLine($"Submitting buy order @ {order.Price}");
+            var orderId = await api.SubmitOrder(Api.DemoAccount, order);
+            
+            // Monitor for 10 seconds
+            for (int i = 0; i < 20; i++)
+            {
+                var status = await api.GetOrderStatus(orderId);
+                Console.WriteLine($"[{i}] {status.Status}: {status.CumulativeQuantity}/{order.Quantity} @ {status.AveragePrice}");
+                
+                if (status.Status == Status.Filled)
+                {
+                    Console.WriteLine("Order filled!");
+                    break;
+                }
+                
+                await Task.Delay(500);
+            }
+            
+            // Cancel if not filled
+            var finalStatus = await api.GetOrderStatus(orderId);
+            if (finalStatus.Status != Status.Filled)
+            {
+                Console.WriteLine("Cancelling unfilled order...");
+                await api.CancelOrder(orderId);
+            }
+        }
+    }
+}
+```
+
+## API Endpoints
+
+```
+GET {BaseUri}/rest/order/newSingleOrder
+GET {BaseUri}/rest/order/id
+GET {BaseUri}/rest/order/cancelById
+```
+
+<Note>
+  All order operations use the `ROFX` market identifier internally.
+</Note>

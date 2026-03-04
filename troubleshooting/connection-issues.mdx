@@ -1,0 +1,87 @@
+---
+title: "Connection Issues"
+description: "Troubleshoot connection problems and disconnection errors in ChuchoBot"
+---
+
+## WiFi Icon Turning Red (DISCONNECTED)
+
+<Warning>
+When ChuchoBot stops receiving data via WebSocket, the WiFi icon changes from green to red and displays "DISCONNECTED" to alert you of a potential connection issue.
+</Warning>
+
+![Disconnected Status](/screenshots/Disconnected.png)
+
+### When Does This Occur?
+
+The disconnection indicator appears in the following scenarios:
+
+- **Before market opens** - The application shows disconnected status before trading hours begin
+- **After market closes** - The application shows disconnected status after the trading session ends
+- **Connection problems** - Actual connection issues during active trading hours
+
+### Market Hours Configuration
+
+ChuchoBot uses configured market hours to determine when the market is operational. Default hours are:
+
+#### General Market Hours
+- **Market Open**: 10:30:00
+- **Market Close**: 17:00:00
+- **Market Close with Auction**: 16:57:00
+
+#### Immediate Settlement (CI) Market Hours
+- **CI Open**: 10:30:00
+- **CI Close**: 17:00:00
+- **CI Close with Auction**: 16:57:00
+
+<Info>
+These hours determine when ChuchoBot displays the connection status correctly. The red WiFi icon before 10:30 or after 17:00 is normal behavior.
+</Info>
+
+### Solution for Connection Issues During Market Hours
+
+If the disconnection occurs **while the market is open**:
+
+1. Close ChuchoBot completely
+2. Relaunch `ChuchoBot.exe`
+3. Log in again with your Primary API credentials
+
+<Note>
+The connection status is based on real-time WebSocket data from Primary API. If issues persist, verify your network connection and Primary API access.
+</Note>
+
+## Modifying Market Hours
+
+If you need to adjust the market hours configuration:
+
+1. Close ChuchoBot
+2. Open the `ChuchoBot.exe.config` file in a text editor
+3. Locate the `<applicationSettings>` section within `<Primary.WinFormsApp.Properties.Settings>`
+4. Modify the following settings:
+   - `MarketOpenTime`
+   - `MarketCloseTime`
+   - `MarketCloseTimeWithAuction`
+   - `CIOpenTime`
+   - `CICloseTime`
+   - `CICloseTimeWithAuction`
+5. Save the file and restart ChuchoBot
+
+## Primary API Connection Requirements
+
+<Warning>
+ChuchoBot requires access to Primary API (Matriz) to function. The application will not work without this access.
+</Warning>
+
+Ensure you have:
+- Valid Primary API credentials from your ALyC (broker)
+- Correct Primary API Base URL configured
+- Active network connection
+- Windows operating system with .NET Framework 4.7.2
+
+## Testing Your Connection
+
+To verify your connection is working:
+
+1. Check the WiFi icon status (should be green during market hours)
+2. Verify real-time price updates are appearing in the instrument list
+3. Confirm your login credentials are correct
+4. Ensure the Primary API Base URL matches your broker's endpoint

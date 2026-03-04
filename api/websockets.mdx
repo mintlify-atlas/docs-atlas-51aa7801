@@ -1,0 +1,537 @@
+---
+title: 'WebSockets'
+description: 'Real-time market data and order updates via WebSocket connections'
+---
+
+## Overview
+
+The Primary SDK provides WebSocket connections for real-time streaming data. Two types of WebSockets are available:
+
+1. **Market Data WebSocket** - Real-time market data, trades, and order book updates
+2. **Order Data WebSocket** - Real-time order status updates and fills
+
+<Note>
+  WebSocket connections automatically convert HTTP/HTTPS endpoints to WS/WSS schemes.
+</Note>
+
+## Market Data WebSocket
+
+Create a WebSocket connection to receive real-time market data updates.
+
+```csharp
+public MarketDataWebSocket CreateMarketDataSocket(
+    IEnumerable<Instrument> instruments,
+    IEnumerable<Entry> entries,
+    uint level,
+    uint depth
+)
+```
+
+```csharp
+public MarketDataWebSocket CreateMarketDataSocket(
+    IEnumerable<Instrument> instruments,
+    IEnumerable<Entry> entries,
+    uint level,
+    uint depth,
+    CancellationToken cancellationToken
+)
+```
+
+### Parameters
+
+<ParamField path="instruments" type="IEnumerable<Instrument>" required>
+  Collection of instruments to watch
+</ParamField>
+
+<ParamField path="entries" type="IEnumerable<Entry>" required>
+  Market data entries to subscribe to (Bids, Offers, Last, Volume, etc.)
+</ParamField>
+
+<ParamField path="level" type="uint" required>
+  Update frequency level (1-5):
+  - **1**: 100ms updates (fastest)
+  - **2**: 500ms updates
+  - **3**: 1000ms updates
+  - **4**: 3000ms updates
+  - **5**: 6000ms updates (slowest)
+</ParamField>
+
+<ParamField path="depth" type="uint" required>
+  Order book depth (number of price levels)
+</ParamField>
+
+<ParamField path="cancellationToken" type="CancellationToken">
+  Optional cancellation token to stop the WebSocket connection
+</ParamField>
+
+### Example: Basic Market Data Stream
+
+```csharp
+using Primary;
+using Primary.Data;
+using Primary.WebSockets;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Get instruments to watch
+var instruments = await api.GetAllInstruments();
+var watchList = instruments.Take(3).ToArray();
+
+// Define entries to subscribe to
+var entries = new[] 
+{ 
+    Entry.Last, 
+    Entry.Bids, 
+    Entry.Offers,
+    Entry.Volume 
+};
+
+// Create WebSocket
+var socket = api.CreateMarketDataSocket(
+    instruments: watchList,
+    entries: entries,
+    level: 1,      // 100ms updates
+    depth: 5       // 5 levels of book
+);
+
+// Subscribe to data events
+socket.OnData = (api, data) =>
+{
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {data.Instrument.Symbol}");
+    
+    if (data.Data.HasLastPrice())
+    {
+        Console.WriteLine($"  Last: {data.Data.Last.Price} x {data.Data.Last.Size}");
+    }
+    
+    if (data.Data.HasBids())
+    {
+        Console.WriteLine($"  Bid: {data.Data.GetTopBidPrice()} x {data.Data.GetTopBidSize()}");
+    }
+    
+    if (data.Data.HasOffers())
+    {
+        Console.WriteLine($"  Offer: {data.Data.GetTopOfferPrice()} x {data.Data.GetTopOfferSize()}");
+    }
+    
+    Console.WriteLine($"  Volume: {data.Data.Volume}");
+    Console.WriteLine();
+};
+
+// Start streaming
+var task = await socket.Start();
+
+// Run for 30 seconds
+await Task.Delay(30000);
+
+Console.WriteLine("Disconnecting...");
+socket.Dispose();
+```
+
+### Example: With Cancellation Token
+
+```csharp
+using System.Threading;
+
+var cts = new CancellationTokenSource();
+
+// Create socket with cancellation token
+var socket = api.CreateMarketDataSocket(
+    instruments: watchList,
+    entries: new[] { Entry.Last, Entry.Volume },
+    level: 2,
+    depth: 1,
+    cancellationToken: cts.Token
+);
+
+socket.OnData = (api, data) =>
+{
+    Console.WriteLine($"{data.Instrument.Symbol}: {data.Data.Last?.Price}");
+};
+
+var task = await socket.Start();
+
+// Cancel after 10 seconds
+await Task.Delay(10000);
+cts.Cancel();
+
+Console.WriteLine("WebSocket cancelled");
+```
+
+### Example: Full Order Book Display
+
+```csharp
+var socket = api.CreateMarketDataSocket(
+    instruments: new[] { instrument },
+    entries: new[] { Entry.Bids, Entry.Offers },
+    level: 1,
+    depth: 10  // Get 10 levels
+);
+
+socket.OnData = (api, data) =>
+{
+    Console.Clear();
+    Console.WriteLine($"Order Book: {data.Instrument.Symbol}");
+    Console.WriteLine($"Timestamp: {DateTimeOffset.FromUnixTimeMilliseconds(data.Timestamp)}");
+    Console.WriteLine();
+    
+    Console.WriteLine("OFFERS (Ask)");
+    Console.WriteLine("Price      Size");
+    Console.WriteLine("─────────────────");
+    
+    if (data.Data.Offers != null)
+    {
+        foreach (var offer in data.Data.Offers.Reverse())
+        {
+            Console.WriteLine($"{offer.Price,8:N2}  {offer.Size,8:N0}");
+        }
+    }
+    
+    Console.WriteLine();
+    Console.WriteLine("BIDS (Bid)");
+    Console.WriteLine("Price      Size");
+    Console.WriteLine("─────────────────");
+    
+    if (data.Data.Bids != null)
+    {
+        foreach (var bid in data.Data.Bids)
+        {
+            Console.WriteLine($"{bid.Price,8:N2}  {bid.Size,8:N0}");
+        }
+    }
+};
+
+await socket.Start();
+```
+
+## Order Data WebSocket
+
+Create a WebSocket connection to receive real-time order updates.
+
+```csharp
+public OrderDataWebSocket CreateOrderDataSocket(
+    IEnumerable<string> accounts
+)
+```
+
+```csharp
+public OrderDataWebSocket CreateOrderDataSocket(
+    IEnumerable<string> accounts,
+    CancellationToken cancellationToken
+)
+```
+
+### Parameters
+
+<ParamField path="accounts" type="IEnumerable<string>" required>
+  Collection of account names to monitor for order updates
+</ParamField>
+
+<ParamField path="cancellationToken" type="CancellationToken">
+  Optional cancellation token to stop the WebSocket connection
+</ParamField>
+
+### Example: Order Status Updates
+
+```csharp
+using Primary;
+using Primary.Data.Orders;
+using Primary.WebSockets;
+using System;
+using System.Threading.Tasks;
+
+var api = new Api(Api.DemoEndpoint);
+await api.Login(Api.DemoUsername, Api.DemoPassword);
+
+// Create order data socket
+var socket = api.CreateOrderDataSocket(
+    accounts: new[] { Api.DemoAccount }
+);
+
+// Subscribe to order events
+socket.OnData = (api, data) =>
+{
+    var order = data.OrderReport;
+    
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Order Update");
+    Console.WriteLine($"  Order ID: {order.ClientOrderId}");
+    Console.WriteLine($"  Status: {order.Status}");
+    Console.WriteLine($"  Instrument: {order.Instrument.Symbol}");
+    Console.WriteLine($"  Side: {order.Side}");
+    Console.WriteLine($"  Quantity: {order.Quantity}");
+    Console.WriteLine($"  Filled: {order.CumulativeQuantity}");
+    Console.WriteLine($"  Remaining: {order.LeavesQuantity}");
+    Console.WriteLine($"  Avg Price: {order.AveragePrice}");
+    Console.WriteLine($"  Status Text: {order.StatusText}");
+    Console.WriteLine();
+};
+
+// Start streaming
+var task = await socket.Start();
+
+Console.WriteLine("Monitoring orders. Press Enter to stop...");
+Console.ReadLine();
+
+socket.Dispose();
+```
+
+### Example: Order Fill Notification
+
+```csharp
+var socket = api.CreateOrderDataSocket(new[] { Api.DemoAccount });
+
+socket.OnData = (api, orderData) =>
+{
+    var order = orderData.OrderReport;
+    
+    // Notify on fills
+    if (order.Status == Status.PartiallyFilled || order.Status == Status.Filled)
+    {
+        Console.WriteLine($"🎉 FILL: {order.LastQuantity} @ {order.LastPrice}");
+        Console.WriteLine($"   Total: {order.CumulativeQuantity}/{order.Quantity}");
+        
+        if (order.Status == Status.Filled)
+        {
+            Console.WriteLine($"   ✅ Order completely filled at avg {order.AveragePrice}");
+        }
+    }
+    
+    // Notify on rejections
+    if (order.Status == Status.Rejected)
+    {
+        Console.WriteLine($"❌ REJECTED: {order.StatusText}");
+    }
+};
+
+await socket.Start();
+```
+
+### Example: Monitor Multiple Accounts
+
+```csharp
+// Get all accounts
+var accounts = await api.GetAccounts();
+var accountNames = accounts.Select(a => a.Name).ToArray();
+
+// Monitor all accounts
+var socket = api.CreateOrderDataSocket(accountNames);
+
+socket.OnData = (api, data) =>
+{
+    var order = data.OrderReport;
+    
+    Console.WriteLine($"Account {order.Account.Id}: {order.Status} - {order.Instrument.Symbol}");
+};
+
+await socket.Start();
+```
+
+## WebSocket Properties
+
+Both WebSocket types expose these properties:
+
+<ResponseField name="IsRunning" type="bool">
+  Whether the WebSocket is currently running
+</ResponseField>
+
+<ResponseField name="CancelToken" type="CancellationToken">
+  The cancellation token used for this WebSocket
+</ResponseField>
+
+<ResponseField name="OnData" type="Action<Api, TResponse>">
+  Callback invoked when data is received. Set this before calling `Start()`.
+</ResponseField>
+
+### Example: Check Running Status
+
+```csharp
+var socket = api.CreateMarketDataSocket(instruments, entries, 1, 5);
+
+socket.OnData = (api, data) => { /* ... */ };
+
+var task = await socket.Start();
+
+Console.WriteLine($"WebSocket running: {socket.IsRunning}");
+
+// Later...
+if (socket.IsRunning)
+{
+    socket.Dispose();
+}
+```
+
+## Complete Trading Bot Example
+
+Combine market data and order WebSockets for automated trading:
+
+```csharp
+using Primary;
+using Primary.Data;
+using Primary.Data.Orders;
+using Primary.WebSockets;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+class TradingBot
+{
+    private Api _api;
+    private Instrument _instrument;
+    private decimal _lastPrice = 0;
+    private string _activeOrderId = null;
+    
+    async Task Run()
+    {
+        _api = new Api(Api.DemoEndpoint);
+        await _api.Login(Api.DemoUsername, Api.DemoPassword);
+        
+        // Get instrument
+        var instruments = await _api.GetAllInstruments();
+        _instrument = instruments.First();
+        
+        Console.WriteLine($"Trading bot started for {_instrument.Symbol}");
+        
+        // Start market data stream
+        var marketSocket = _api.CreateMarketDataSocket(
+            instruments: new[] { _instrument },
+            entries: new[] { Entry.Last, Entry.Bids, Entry.Offers },
+            level: 1,
+            depth: 5
+        );
+        
+        marketSocket.OnData = OnMarketData;
+        await marketSocket.Start();
+        
+        // Start order stream
+        var orderSocket = _api.CreateOrderDataSocket(
+            accounts: new[] { Api.DemoAccount }
+        );
+        
+        orderSocket.OnData = OnOrderUpdate;
+        await orderSocket.Start();
+        
+        Console.WriteLine("Press Enter to stop...");
+        Console.ReadLine();
+        
+        marketSocket.Dispose();
+        orderSocket.Dispose();
+    }
+    
+    void OnMarketData(Api api, MarketData data)
+    {
+        if (data.Data.HasLastPrice())
+        {
+            decimal newPrice = data.Data.Last.Price.Value;
+            
+            // Simple strategy: buy on 1% drop
+            if (_lastPrice > 0 && newPrice < _lastPrice * 0.99m && _activeOrderId == null)
+            {
+                Console.WriteLine($"Price dropped 1%! Buying at {newPrice}");
+                SubmitBuyOrder(newPrice).Wait();
+            }
+            
+            _lastPrice = newPrice;
+        }
+    }
+    
+    void OnOrderUpdate(Api api, OrderData data)
+    {
+        var order = data.OrderReport;
+        
+        Console.WriteLine($"Order {order.ClientOrderId}: {order.Status}");
+        
+        if (order.Status == Status.Filled)
+        {
+            Console.WriteLine($"✅ Filled {order.CumulativeQuantity} @ {order.AveragePrice}");
+            _activeOrderId = null;
+        }
+        else if (order.Status == Status.Rejected)
+        {
+            Console.WriteLine($"❌ Rejected: {order.StatusText}");
+            _activeOrderId = null;
+        }
+    }
+    
+    async Task SubmitBuyOrder(decimal price)
+    {
+        try
+        {
+            var order = new Order
+            {
+                Instrument = _instrument,
+                Side = Side.Buy,
+                Quantity = 10,
+                Price = price,
+                Type = Type.Limit,
+                Expiration = Expiration.Day
+            };
+            
+            var orderId = await _api.SubmitOrder(Api.DemoAccount, order);
+            _activeOrderId = orderId.ClientOrderId;
+            
+            Console.WriteLine($"Order submitted: {_activeOrderId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Order failed: {ex.Message}");
+        }
+    }
+    
+    static async Task Main()
+    {
+        var bot = new TradingBot();
+        await bot.Run();
+    }
+}
+```
+
+## Update Frequency Levels
+
+| Level | Update Time | Use Case |
+|-------|-------------|----------|
+| 1 | 100ms | High-frequency trading, scalping |
+| 2 | 500ms | Active trading, quick reactions |
+| 3 | 1000ms | Standard trading, balanced updates |
+| 4 | 3000ms | Swing trading, less frequent checks |
+| 5 | 6000ms | Position monitoring, low frequency |
+
+<Tip>
+  Use lower update frequencies (higher level numbers) to reduce bandwidth and CPU usage when real-time updates aren't critical.
+</Tip>
+
+## Error Handling
+
+```csharp
+try
+{
+    var socket = api.CreateMarketDataSocket(instruments, entries, 1, 5);
+    
+    socket.OnData = (api, data) =>
+    {
+        try
+        {
+            // Process data
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing data: {ex.Message}");
+        }
+    };
+    
+    var task = await socket.Start();
+    await task; // Will throw if connection fails
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"WebSocket error: {ex.Message}");
+}
+```
+
+<Warning>
+  Always dispose WebSocket connections when done to release resources properly.
+</Warning>

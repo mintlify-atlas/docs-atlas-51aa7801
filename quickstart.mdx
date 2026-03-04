@@ -1,80 +1,286 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get started with ChuchoBot in minutes
 ---
 
-## Get started in three steps
+# Quick start
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through logging in, configuring your first instruments, and running your first arbitrage scan.
 
-### Step 1: Set up your local environment
+## Login to Primary API
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Launch ChuchoBot">
+    Double-click `ChuchoBot.exe` to start the application. The Primary Login window will appear.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ![Login window](/screenshots/Login.png)
+  </Step>
+  
+  <Step title="Enter your Primary API base URL">
+    In the **Primary API Base URL** field, enter your broker's API endpoint.
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    **Example for Bull Market Brokers:**
+    ```
+    https://api.bull.xoms.com.ar
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Note>
+    See the [installation guide](/installation#verify-primary-api-access) for a complete list of broker URLs.
+    </Note>
+  </Step>
+  
+  <Step title="Enter your credentials">
+    Use the same username and password you use to log in to the Matriz platform.
+    
+    - **Username:** Your Matriz account username
+    - **Password:** Your Matriz account password
+  </Step>
+  
+  <Step title="Click login">
+    Click the "Login" button to authenticate. If successful, the main ChuchoBot window will open and establish a WebSocket connection for real-time data.
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Info>
+ChuchoBot will save your credentials locally for future sessions. You only need to enter them once.
+</Info>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Configure instruments to monitor
 
-### Step 3: Go live
+Before you can detect arbitrage opportunities, you need to tell ChuchoBot which instruments to monitor.
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<Steps>
+  <Step title="Open configuration menu">
+    In the main window, click **Configuración** (Configuration) in the menu bar.
+    
+    ![Configuration menu](/screenshots/Configuracion.png)
+  </Step>
+  
+  <Step title="Select instruments to monitor">
+    Click **Instrumentos a monitorear** (Instruments to monitor).
+  </Step>
+  
+  <Step title="Add instrument tickers">
+    In the dialog that appears, add one instrument ticker per line.
+    
+    ![Instruments to monitor](/screenshots/InstrumentosMonitorear.png)
+    
+    **Example instruments:**
+    ```
+    GGAL
+    YPFD
+    AL30
+    GD30
+    SPY
+    QQQ
+    ```
+    
+    <Note>
+    Add any combination of stocks, bonds, CEDEARs, or letters that you want to monitor for arbitrage opportunities.
+    </Note>
+  </Step>
+  
+  <Step title="Save configuration">
+    Click **OK** to save your instrument list. ChuchoBot will immediately begin receiving real-time market data for these instruments.
+  </Step>
+</Steps>
+
+## Verify connection status
+
+Check the connection status indicator in the main window:
+
+- **Green WiFi icon + "CONNECTED":** Successfully receiving real-time data
+- **Red WiFi icon + "DISCONNECTED":** Connection lost or market is closed
+
+![Disconnected status](/screenshots/Disconnected.png)
+
+<Warning>
+If you see "DISCONNECTED" during market hours, try closing and restarting ChuchoBot to reestablish the WebSocket connection.
+</Warning>
+
+<Info>
+The connection indicator will show "DISCONNECTED" before market open (10:30 AM) and after market close (5:00 PM). This is normal behavior.
+</Info>
+
+## Run your first arbitrage scan
+
+Now that ChuchoBot is connected and monitoring instruments, you can start scanning for arbitrage opportunities.
+
+### Settlement term arbitrage
+
+The settlement term arbitrage scanner detects profit opportunities between different settlement terms (CI, 24hs, 48hs).
+
+<Steps>
+  <Step title="Open arbitrage scanner">
+    In the menu bar, click **Arbitrajes de Plazos** (Settlement Term Arbitrage).
+  </Step>
+  
+  <Step title="View detected opportunities">
+    The scanner displays all detected arbitrage opportunities in real-time:
+    
+    ![Settlement arbitrage scanner](/screenshots/ArbitrajePlazos.png)
+    
+    **Key columns:**
+    - **Instrument:** The ticker symbol
+    - **1 Venta:** First leg settlement term (sell)
+    - **2 Compra:** Second leg settlement term (buy)
+    - **P&L:** Estimated profit/loss including fees and commissions
+    - **TNA:** Annualized return rate
+  </Step>
+  
+  <Step title="Filter results (optional)">
+    Use the filter options:
+    - **Ver sólo arbitrajes según instrumentos en cartera:** Show only arbitrages for instruments you hold
+    - **Ver sólo arbitrajes con profit:** Show only profitable opportunities (P&L > 0)
+  </Step>
+  
+  <Step title="View arbitrage details">
+    Double-click any row to open the detailed view:
+    
+    ![Arbitrage detail](/screenshots/ArbitrajePlazoDetail.png)
+    
+    In this window, you can:
+    - Adjust nominal amounts
+    - Modify buy/sell prices
+    - Change commission rates
+    - See recalculated P&L in real-time
+  </Step>
+</Steps>
+
+### Understanding arbitrage operations
+
+**When sell settlement < buy settlement (requires holding the instrument):**
+
+Example: Sell NVDA in CI, buy NVDA in 24hs
+
+1. Sell the instrument in the shorter term (CI)
+2. Buy the instrument in the longer term (24hs)
+3. Place the proceeds from step 1 in caucion (short-term lending)
+
+**When sell settlement > buy settlement (requires capital or caucion):**
+
+Example: Sell SPY in 24hs, buy SPY in CI
+
+1. Buy the instrument in the shorter term (CI)
+2. Sell the instrument in the longer term (24hs)
+3. Take caucion to cover the purchase in step 1
+
+<Warning>
+ChuchoBot calculates and displays opportunities but **does not execute trades**. You must manually place orders through your broker's trading platform.
+</Warning>
+
+## Configuration
+
+Optimize ChuchoBot for your trading setup by configuring these settings:
+
+### Market fees (Derechos de Mercado)
+
+ChuchoBot has pre-configured market fees:
+
+- **Stocks and CEDEARs:** 0.08%
+- **Treasury letters:** 0.001%
+- **Bonds:** 0.01% (default for unlisted instruments)
+- **Commission per operation:** 0.10% (default, configurable in arbitrage window)
+
+These rates are used to calculate accurate P&L. You can modify commission rates in the arbitrage scanner window.
+
+### Caucion commission rates
+
+To get accurate P&L calculations for arbitrage operations:
+
+1. Open the settlement term arbitrage scanner
+2. Configure **Comisión Tomadora (TNA)** - commission for taking caucion (borrowing)
+3. Configure **Comisión Colocadora (TNA)** - commission for placing caucion (lending)
+
+These values depend on your broker's rates.
+
+### Configure D/C ticker exceptions
+
+Some instruments don't follow the standard naming convention for dollar MEP (D) and CCL (C) variants.
+
+**Example:** For letter `X20Y4`, the MEP ticker is `XY4D` (not `X20Y4D`)
+
+<Steps>
+  <Step title="Open exceptions configuration">
+    Click **Configuración** > **Excepciones de instrumentos $;D;C**
+  </Step>
+  
+  <Step title="Add exception">
+    Enter the exception using this format:
+    ```
+    {Ticker in pesos};{MEP ticker};{CCL ticker}
+    ```
+    
+    Example:
+    ```
+    X20Y4;XY4D;XY4C
+    ```
+  </Step>
+  
+  <Step title="Save">
+    Click **OK** to save. ChuchoBot will now correctly identify the D/C variants for this instrument.
+  </Step>
+</Steps>
+
+## Calculate dollar MEP and CCL
+
+ChuchoBot can show you the best instruments for buying or selling dollars through MEP or CCL.
+
+### Dollar MEP
+
+1. In the menu bar, click **Dolar** > **MEP**
+2. Choose **Compra** (buy) or **Venta** (sell)
+3. View instruments sorted by best exchange rate
+
+![Dollar MEP scanner](/screenshots/DolarMEP.png)
+
+### Dollar CCL
+
+1. In the menu bar, click **Dolar** > **CCL**
+2. Choose **Compra** (buy) or **Venta** (sell)
+3. View instruments sorted by best exchange rate
+
+![Dollar CCL scanner](/screenshots/DolarCCL.png)
+
+## Analyze bond ratios
+
+Use the ratio analyzer to identify bond rotation opportunities (e.g., GD30/AL30).
+
+<Steps>
+  <Step title="Open ratio trade launcher">
+    Click **Arbitrajes de Plazos** > **Seleccionar instrumento y Plazos**
+    
+    ![Ratio launcher](/screenshots/ArbitrajePlazosLauncher.png)
+  </Step>
+  
+  <Step title="Select instruments">
+    Choose:
+    1. First instrument (e.g., GD30)
+    2. Second instrument (e.g., AL30)
+    3. Settlement term for both
+  </Step>
+  
+  <Step title="View ratio analysis">
+    The ratio window shows:
+    - Current ratio between the two instruments
+    - Nominal amounts needed for equal exposure
+    - Estimated P&L for rotation strategy
+  </Step>
+</Steps>
+
+<Info>
+**Ratio trading strategy:** When the ratio is historically high, sell the expensive instrument and buy the cheap one with equal monetary value. When the ratio reverts, close both positions for a profit.
+</Info>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
+Now that you're familiar with ChuchoBot's basic features:
 
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+- Monitor the arbitrage scanner during market hours to identify opportunities
+- Configure market fees and caucion rates specific to your broker
+- Experiment with different instrument combinations
+- Review the P&L calculations to understand all costs involved
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+Remember: ChuchoBot is an analysis tool. Always verify opportunities and place orders manually through your broker's platform.
 </Note>

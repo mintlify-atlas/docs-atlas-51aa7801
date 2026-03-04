@@ -1,0 +1,343 @@
+---
+title: 'Bond Ratio Analyzer'
+description: 'Analyze relative value between bonds and identify asset rotation opportunities'
+icon: 'chart-line'
+---
+
+## Overview
+
+The Bond Ratio Analyzer helps you identify opportunities for asset rotation by tracking the relative price relationship (ratio) between different bonds. When historically correlated bonds diverge in price, you can profit by selling the expensive one and buying the cheap one.
+
+<Info>
+**Core Strategy**: Asset rotation exploits mean reversion in bond price relationships. When the ratio between two bonds deviates from its historical average, it may revert, creating profit opportunities.
+</Info>
+
+## What is Asset Rotation?
+
+Asset rotation (or ratio trading) involves:
+1. **Selling the relatively expensive asset**
+2. **Buying the relatively cheap asset** for the same total amount
+3. **Waiting for ratio reversion**
+4. **Closing the position** when the ratio normalizes
+
+**The goal:** Profit from the relative price movement, regardless of whether the market goes up or down.
+
+## How Bond Ratios Work
+
+### Ratio Calculation
+
+The ratio is simply one bond's price divided by another's:
+
+```csharp
+Ratio = Bond1.Price / Bond2.Price
+
+// Example:
+GD30.Price = $60,000
+AL30.Price = $55,000
+Ratio (GD30/AL30) = 60,000 / 55,000 = 1.0909 = 9.09%
+```
+
+### Understanding the Ratio
+
+- **Ratio > historical average**: Bond1 is relatively expensive
+- **Ratio < historical average**: Bond1 is relatively cheap
+- **Ratio trend**: Helps identify which asset is outperforming
+
+<Note>
+The ratio itself doesn't indicate absolute value—it only shows relative pricing between the two assets.
+</Note>
+
+## Operation Workflow
+
+### Opening a Ratio Position
+
+<Steps>
+  <Step title="Identify Ratio Divergence">
+    Use TradingView or other charting tools to analyze the historical ratio. Identify when the current ratio significantly deviates from its mean.
+  </Step>
+  <Step title="Determine Expensive vs Cheap">
+    If the ratio is high, Bond1 is relatively expensive. If low, Bond1 is relatively cheap.
+  </Step>
+  <Step title="Calculate Trade Size">
+    Use ChuchoBot's ratio calculator to determine the correct nominal amounts for equal peso values.
+  </Step>
+  <Step title="Execute Both Legs Simultaneously">
+    Buy the cheap bond and sell the expensive bond at the same time to lock in the ratio.
+  </Step>
+</Steps>
+
+### Closing a Ratio Position
+
+<Steps>
+  <Step title="Monitor Ratio Reversion">
+    Track the ratio until it moves back toward the historical average.
+  </Step>
+  <Step title="Execute Opposite Trades">
+    Sell what you bought, buy back what you sold, using current prices.
+  </Step>
+  <Step title="Calculate Profit">
+    Your profit comes from the ratio change, not the absolute price change.
+  </Step>
+</Steps>
+
+## Detailed Example: GD30/AL30 Rotation
+
+### Opening the Position
+
+**Market conditions:**
+- GD30 price: $60,000
+- AL30 price: $55,000  
+- Current ratio: 9.09%
+- Historical average ratio: 8.00%
+- **Analysis**: GD30 is expensive relative to AL30
+
+**Trade execution:**
+```
+1. Buy 10,909 AL30 @ $55,000 = $5,999,950 total
+2. Sell 10,000 GD30 @ $60,000 = $6,000,000 total
+
+Note: Different nominal amounts, but same total peso value!
+This is calculated using the ratio.
+```
+
+### Closing the Position
+
+**Market conditions later:**
+- GD30 price: $59,000 (down $1,000)
+- AL30 price: $54,500 (down $500)
+- New ratio: 8.25%
+- **Analysis**: Ratio converged toward average
+
+**Trade execution:**
+```
+1. Sell 10,909 AL30 @ $54,500 = $5,945,405 total
+2. Buy 10,000 GD30 @ $59,000 = $5,900,000 total
+
+Profit calculation:
+AL30 result: $5,945,405 - $5,999,950 = -$54,545
+GD30 result: $6,000,000 - $5,900,000 = +$100,000
+
+Net profit: $45,455 (before commissions)
+```
+
+<Info>
+**Key insight**: Both bonds fell in price, but we profited because AL30 fell less than GD30 in relative terms. The ratio is what matters!
+</Info>
+
+### Profit Source Analysis
+
+Why did we profit?
+- GD30 fell 1.67% (from $60,000 to $59,000)
+- AL30 fell 0.91% (from $55,000 to $54,500)
+- **Relative outperformance**: AL30 fell less than GD30
+- Ratio moved from 9.09% to 8.25% (9.2% compression)
+
+## Using the Ratio Calculator
+
+ChuchoBot provides a built-in ratio trade calculator:
+
+### Accessing the Calculator
+
+1. **Dolar** → **Ratios** (or similar menu option)
+2. Enter the two instruments you want to trade
+3. Select settlement terms for both
+
+![Ratio Trade Calculator](/screenshots/FrmRatioTrade.png)
+
+### Calculator Features
+
+```csharp
+public class RatioTrade
+{
+    // Instrument to sell (relatively expensive)
+    public BuySellTrade SellThenBuy { get; set; }
+    
+    // Instrument to buy (relatively cheap)
+    public BuySellTrade BuyThenSell { get; set; }
+    
+    // Profit calculation from spread
+    public decimal Profit =>
+        (BuyThenSell.SellPrice / SellThenBuy.BuyPrice) - 1;
+}
+```
+
+The calculator shows:
+- Current prices for both instruments
+- Ratio percentage
+- Required nominal amounts for equal peso values
+- Available depth at current bid/offer
+
+## Visualizing Ratios in TradingView
+
+To track historical ratios and identify opportunities:
+
+<Steps>
+  <Step title="Open First Asset Chart">
+    Navigate to the chart of your first bond (e.g., GD30)
+  </Step>
+  <Step title="Add Ratio Indicator">
+    Click **Indicators** → Search for **Ratio** → Apply
+  </Step>
+  <Step title="Enter Second Asset">
+    In the ratio indicator settings, enter the second bond (e.g., AL30)
+  </Step>
+  <Step title="Analyze Ratio Levels">
+    Look for ratio extremes, support/resistance levels, and mean reversion patterns
+  </Step>
+</Steps>
+
+<Info>
+TradingView's Ratio indicator plots the historical relationship, helping you identify when the current ratio is at extremes.
+</Info>
+
+## Common Bond Pairs for Rotation
+
+### Sovereign Dollar Bonds
+
+<CardGroup cols={2}>
+  <Card title="GD30 / AL30" icon="scale-balanced">
+    Most liquid pair, tight spreads, similar duration
+  </Card>
+  <Card title="GD38 / AL29" icon="scale-balanced">
+    Longer duration, more volatile ratio
+  </Card>
+  <Card title="GD35 / GD41" icon="scale-balanced">
+    Same issuer, different maturities (curve trade)
+  </Card>
+  <Card title="AL30 / AE38" icon="scale-balanced">
+    Different issuance dates, duration mismatch
+  </Card>
+</CardGroup>
+
+### Dollar-Denominated vs Peso Bonds
+
+- **GD30D / GD30**: Dollar vs peso version of same bond
+- **AL30D / AL30**: Implicit MEP rate trading
+
+<Warning>
+Mixing peso and dollar bonds requires understanding currency risk. The ratio reflects both relative value AND implicit exchange rate.
+</Warning>
+
+## Profit Calculation
+
+The actual profit from ratio trading comes from the ratio change:
+
+```csharp
+// Simplified profit formula
+OpeningRatio = ExpensiveBond.Price / CheapBond.Price
+ClosingRatio = ExpensiveBond.Price / CheapBond.Price
+
+RatioChange = (ClosingRatio - OpeningRatio) / OpeningRatio
+
+// On equal peso amounts
+Profit ≈ TotalAmount × RatioChange
+```
+
+### Why Equal Peso Amounts Matter
+
+Using equal total peso values ensures:
+1. **Market neutrality**: You're not betting on direction, only ratio
+2. **Balanced exposure**: Neither leg dominates the P&L
+3. **True arbitrage**: Profit comes purely from relative movement
+
+<Note>
+If you use different amounts, you're adding directional exposure, which changes the risk profile from pure ratio trading.
+</Note>
+
+## Risk Considerations
+
+<AccordionGroup>
+  <Accordion title="Ratio May Not Revert">
+    Historical relationships can break permanently due to fundamental changes (default risk, liquidity, etc.).
+  </Accordion>
+  <Accordion title="Divergence Can Worsen">
+    The ratio can move further against you before reverting. Ensure adequate margin.
+  </Accordion>
+  <Accordion title="Transaction Costs">
+    Four legs (open buy, open sell, close buy, close sell) mean 4× commissions and fees.
+  </Accordion>
+  <Accordion title="Execution Risk">
+    You must execute both legs simultaneously. Partial fills can leave you with unwanted directional exposure.
+  </Accordion>
+  <Accordion title="Liquidity Risk">
+    Less liquid bonds can have wide spreads and difficulty exiting positions.
+  </Accordion>
+  <Accordion title="Correlation Breakdown">
+    If the fundamental relationship between bonds changes, the ratio strategy fails.
+  </Accordion>
+</AccordionGroup>
+
+## Advanced: Ratio Statistics
+
+For sophisticated ratio trading, track:
+
+- **Mean ratio**: Average over rolling period (e.g., 30/90 days)
+- **Standard deviation**: Volatility of the ratio
+- **Z-score**: How many standard deviations from mean
+- **Bollinger Bands**: On the ratio itself
+
+**Entry signal example:**
+```
+If (Current Ratio > Mean + 2×StdDev):
+    → Sell Bond1, Buy Bond2 (ratio too high)
+    
+If (Current Ratio < Mean - 2×StdDev):
+    → Buy Bond1, Sell Bond2 (ratio too low)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Trade Liquid Pairs">
+    Stick to highly liquid bonds (GD30, AL30) for better execution and tighter spreads.
+  </Accordion>
+  <Accordion title="Use Historical Analysis">
+    Don't trade ratios blindly. Study the historical behavior in TradingView first.
+  </Accordion>
+  <Accordion title="Set Profit Targets">
+    Define your target ratio level before opening the position. Don't chase perfection.
+  </Accordion>
+  <Accordion title="Consider Duration">
+    Bonds with similar durations tend to have more stable ratios. Mixing durations adds curve risk.
+  </Accordion>
+  <Accordion title="Execute Simultaneously">
+    Use limit orders at the same time to lock in your target ratio. Sequential execution adds risk.
+  </Accordion>
+  <Accordion title="Account for All Costs">
+    Calculate break-even ratio change including all commissions and market fees (typically 0.5-1% total).
+  </Accordion>
+</AccordionGroup>
+
+## Ratio Trading vs Directional Trading
+
+| Aspect | Ratio Trading | Directional Trading |
+|--------|---------------|---------------------|
+| **Market view** | Relative value | Absolute direction |
+| **Profit from** | Ratio change | Price movement |
+| **Market risk** | Lower (market-neutral) | Higher |
+| **Complexity** | Higher (2 legs) | Lower (1 leg) |
+| **Capital requirement** | Higher (2 positions) | Lower |
+| **Transaction costs** | 4× legs | 2× legs |
+| **Best for** | Range-bound markets | Trending markets |
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Dollar MEP/CCL" icon="dollar-sign" href="/features/dollar-mep-ccl">
+    Dollar-denominated bond pairs create implicit MEP ratios
+  </Card>
+  <Card title="Settlement Arbitrage" icon="calendar-days" href="/features/settlement-arbitrage">
+    Arbitrage settlement terms instead of different instruments
+  </Card>
+  <Card title="Market Data" icon="signal" href="/features/market-data">
+    Real-time prices are essential for ratio tracking
+  </Card>
+</CardGroup>
+
+## Technical Reference
+
+The bond ratio analyzer is implemented in:
+- `RatioTrade.cs` - Core ratio calculation and profit logic
+- `FrmRatioTrade.cs` - Ratio calculator UI
+- `FrmRatios.cs` - Ratio scanner interface
+- `BuySellTrade.cs` - Individual instrument pricing
