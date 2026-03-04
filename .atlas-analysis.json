@@ -1,0 +1,101 @@
+{
+  "projectType": "saas",
+  "projectName": "ChuchoBot",
+  "projectDescription": "Windows desktop application for detecting arbitrage opportunities, dollar MEP/CCL trading, bond ratios, and caucion calculations in the Argentine financial market.",
+  "theme": "almond",
+  "primaryColor": "#2E7D32",
+  "lightColor": "#66BB6A",
+  "darkColor": "#1B5E20",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/primary-api-setup",
+              "configuration/market-hours",
+              "configuration/instruments",
+              "configuration/commissions",
+              "configuration/telemetry"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/settlement-arbitrage",
+              "features/dollar-mep-ccl",
+              "features/bond-ratios",
+              "features/caucion-calculator",
+              "features/market-data"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/arbitrage-strategies",
+              "guides/understanding-settlement-terms",
+              "guides/asset-rotation"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/connection-issues",
+              "troubleshooting/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Primary SDK",
+            "pages": [
+              "api/overview",
+              "api/authentication",
+              "api/market-data",
+              "api/instruments",
+              "api/orders",
+              "api/positions",
+              "api/websockets"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time settlement term arbitrage scanner",
+    "Dollar MEP and CCL price calculator",
+    "Bond ratio analyzer for asset rotation",
+    "Caucion (repo) calculator",
+    "WebSocket integration for live market data",
+    "Portfolio position tracking"
+  ],
+  "publicApiSurface": [
+    "Api.Login",
+    "Api.GetAllInstruments",
+    "Api.GetMarketData",
+    "Api.CreateMarketDataSocket",
+    "Api.CreateOrderDataSocket",
+    "Api.SubmitOrder",
+    "Api.GetOrderStatus",
+    "Api.CancelOrder",
+    "Api.GetAccounts",
+    "Api.GetPositions",
+    "Api.GetHistoricalTrades",
+    "MarketDataWebSocket",
+    "OrderDataWebSocket"
+  ]
+}
